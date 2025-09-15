@@ -73,3 +73,39 @@ packages/
 # Temp
 *.tmp
 *.temp
+
+# 各种编辑器的项目配置文件夹
+# JetBrains IDEs
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Visual Studio Code
+.vscode/
+
+# Vim
+*.swp
+*.swo
+
+# Emacs
+*~
+\#*\#
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Xcode
+*.xcuserstate
+project.xcworkspace/
+
+# Android Studio
+*.iml
+.gradle/
+local.properties
+.navigation/
+
+# 其他常见的编辑器和IDE配置
+*/nbproject/
+*/nb-configuration.xml
