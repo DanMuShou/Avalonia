@@ -1,0 +1,65 @@
+﻿<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:controls="using:AvaloniaStudy.Controls"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Design.PreviewWith>
+        <Border Background="{DynamicResource 'DarkBlueBrush '}">
+            <StackPanel Margin="40">
+                <controls:LargeLabelControl Margin="16" />
+                <controls:LargeLabelControl Classes="button" />
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <Style Selector="controls|LargeLabelControl">
+        <Setter Property="Background" Value="{DynamicResource 'MidBlueBrush '}" />
+        <Setter Property="Foreground" Value="White" />
+
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{TemplateBinding Background}" Padding="15,6">
+                    <StackPanel>
+                        <StackPanel.Styles>
+                            <Style Selector="TextBlock">
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="HorizontalAlignment" Value="Center" />
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                            </Style>
+                        </StackPanel.Styles>
+                        <TextBlock FontSize="21" Text="{TemplateBinding LargeText}" />
+                        <TextBlock FontSize="11" Text="{TemplateBinding SmallText}" />
+                    </StackPanel>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <Style Selector="controls|LargeLabelControl.button">
+        <Setter Property="Background" Value="{DynamicResource 'MidBlueBrush '}" />
+        <Setter Property="Foreground" Value="Red" />
+
+        <Setter Property="Template">
+            <ControlTemplate>
+                <StackPanel>
+                    <StackPanel.Styles>
+                        <Style Selector="Label">
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="HorizontalAlignment" Value="Center" />
+                            <Setter Property="HorizontalContentAlignment" Value="Center" />
+                            <Setter Property="VerticalAlignment" Value="Center" />
+                            <Setter Property="VerticalContentAlignment" Value="Center" />
+                        </Style>
+                    </StackPanel.Styles>
+                    <Label
+                        Background="{TemplateBinding Background}"
+                        Content="{TemplateBinding LargeText}"
+                        CornerRadius="20"
+                        FontSize="21"
+                        Margin="0,0,0,4"
+                        Padding="4" />
+                    <Label Content="{TemplateBinding SmallText}" FontSize="11" />
+                </StackPanel>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+</Styles>

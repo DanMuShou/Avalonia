@@ -1,0 +1,20 @@
+<Application
+    RequestedThemeVariant="Default"
+    x:Class="AvaloniaStudy.App"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--  "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options.  -->
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="Controls/LargeLabelControl.axaml" />
+    </Application.Styles>
+
+    <Application.Resources>
+        <SolidColorBrush x:Key="MidGreyBrush ">#e5e5e5</SolidColorBrush>
+        <SolidColorBrush x:Key="LightBlueBrush ">#606875</SolidColorBrush>
+        <SolidColorBrush x:Key="MidBlueBrush ">#373c44</SolidColorBrush>
+        <SolidColorBrush x:Key="DarkBlueBrush ">#1a1c20</SolidColorBrush>
+        <SolidColorBrush x:Key="FadedRedBrush ">#bc7c7a</SolidColorBrush>
+    </Application.Resources>
+</Application>

@@ -1,0 +1,351 @@
+<Window
+    Title="AvaloniaStudy"
+    d:DesignHeight="650"
+    d:DesignWidth="700"
+    mc:Ignorable="d"
+    x:Class="AvaloniaStudy.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:mcto="clr-namespace:AvaloniaStudy.Controls"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Window.Styles>
+        <Style Selector="Button.small">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="MediumPurple" />
+            <Setter Property="CornerRadius" Value="20" />
+            <Setter Property="Padding" Value="7,2" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.small:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Purple" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto, *, Auto">
+        <!--  标题栏  -->
+        <Grid
+            Background="{DynamicResource 'MidGreyBrush '}"
+            ColumnDefinitions="Auto, Auto, *, Auto, Auto"
+            Grid.Row="0"
+            Height="40">
+            <Grid.Styles>
+                <Style Selector="Button">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="Width" Value="45" />
+                    <Setter Property="HorizontalAlignment" Value="Center" />
+                    <Setter Property="VerticalAlignment" Value="Center" />
+                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                    <Setter Property="VerticalContentAlignment" Value="Center" />
+                </Style>
+                <Style Selector="Button Image">
+                    <Setter Property="Width" Value="24" />
+                </Style>
+                <Style Selector="Button /template/ ContentPresenter">
+                    <Setter Property="Transitions">
+                        <Transitions>
+                            <TransformOperationsTransition Duration="0:0:0.2" Property="RenderTransform" />
+                        </Transitions>
+                    </Setter>
+                </Style>
+                <Style Selector="Button:pointerover /template/ ContentPresenter">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="RenderTransform" Value="scale(1.14)" />
+                    <Setter Property="Opacity" Value="0.6" />
+                </Style>
+            </Grid.Styles>
+            <Button
+                Content="显示"
+                Grid.Column="0"
+                Margin="8,0,0,0" />
+            <Button
+                Content="上锁"
+                Grid.Column="1"
+                Margin="4,0" />
+            <StackPanel
+                Grid.Column="2"
+                HorizontalAlignment="Center"
+                Orientation="Horizontal"
+                VerticalAlignment="Center">
+                <TextBlock FontWeight="Black" Text="AVALONIA" />
+                <TextBlock Text="  LOUDNESS METER" />
+            </StackPanel>
+            <Button
+                Content="分享"
+                Grid.Column="3"
+                Margin="4,0" />
+            <Button
+                Content="设置"
+                Grid.Column="4"
+                Margin="0,0,8,0" />
+        </Grid>
+
+        <!--  主显示区  -->
+        <Grid
+            Background="{DynamicResource 'DarkBlueBrush '}"
+            ColumnDefinitions="Auto, Auto, *"
+            Grid.Row="1">
+            <!--  音量条  -->
+            <Grid
+                Grid.Column="0"
+                Margin="0,16"
+                RowDefinitions="*, Auto, Auto"
+                Width="150">
+
+                <!--  音量刻度  -->
+                <Grid
+                    ColumnDefinitions="Auto, *, Auto, Auto"
+                    Grid.Row="0"
+                    Margin="8,0"
+                    RowDefinitions="3*, 3*, 3*, 9*, 5*, 4*, 9*, 9*, 9*, 6*, *">
+                    <Grid.Styles>
+                        <Style Selector="TextBlock">
+                            <Setter Property="Foreground" Value="White" />
+                            <Setter Property="FontSize" Value="12" />
+                            <Setter Property="HorizontalAlignment" Value="Right" />
+                        </Style>
+                    </Grid.Styles>
+
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        Text="0 —" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="1"
+                        Text="-3 —" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="2"
+                        Text="-6 —" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="3"
+                        Text="-9 —" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="4"
+                        Text="-18 —" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="5"
+                        Text="-23 —" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="6"
+                        Text="-27 —" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="7"
+                        Text="-36 —" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="8"
+                        Text="-45 —" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="9"
+                        Text="-54 —" />
+                    <TextBlock
+                        Grid.Column="0"
+                        Grid.Row="10"
+                        Text="asasdd" />
+
+                    <Grid
+                        Grid.Column="1"
+                        Grid.Row="0"
+                        Grid.RowSpan="11"
+                        RowDefinitions="23*, 37*"
+                        Width="20">
+                        <Rectangle
+                            Fill="Red"
+                            Grid.Row="0"
+                            Margin="0,8,0,-8"
+                            Width="20" />
+                        <Rectangle
+                            Fill="White"
+                            Grid.Row="1"
+                            Margin="0,8,0,0"
+                            Width="20" />
+                    </Grid>
+
+                    <TextBlock
+                        Grid.Column="2"
+                        Grid.Row="0"
+                        Text="—" />
+                    <TextBlock
+                        Grid.Column="2"
+                        Grid.Row="1"
+                        Text="—" />
+                    <TextBlock
+                        Grid.Column="2"
+                        Grid.Row="2"
+                        Text="—" />
+                    <TextBlock
+                        Grid.Column="2"
+                        Grid.Row="3"
+                        Text="—" />
+                    <TextBlock
+                        Grid.Column="2"
+                        Grid.Row="4"
+                        Text="—" />
+                    <TextBlock
+                        Grid.Column="2"
+                        Grid.Row="5"
+                        Text="—" />
+                    <TextBlock
+                        Grid.Column="2"
+                        Grid.Row="6"
+                        Text="—" />
+                    <TextBlock
+                        Grid.Column="2"
+                        Grid.Row="7"
+                        Text="—" />
+                    <TextBlock
+                        Grid.Column="2"
+                        Grid.Row="8"
+                        Text="—" />
+                    <TextBlock
+                        Grid.Column="2"
+                        Grid.Row="9"
+                        Text="—" />
+                    <TextBlock
+                        Grid.Column="2"
+                        Grid.Row="10"
+                        Text="---" />
+
+                    <!--  箭头  -->
+                    <Canvas
+                        Grid.Column="3"
+                        Grid.Row="0"
+                        Grid.RowSpan="11"
+                        Width="20">
+                        <Rectangle
+                            Canvas.Top="10"
+                            Fill="White"
+                            Height="20"
+                            Width="20" />
+                    </Canvas>
+                </Grid>
+
+                <!--  LUFS 文本  -->
+                <TextBlock
+                    FontSize="20"
+                    Foreground="White"
+                    Grid.Row="1"
+                    HorizontalAlignment="Center"
+                    Margin="0,5"
+                    Text="LUFS" />
+
+                <!--  音量条按钮  -->
+                <StackPanel
+                    Grid.Row="2"
+                    HorizontalAlignment="Center"
+                    Orientation="Horizontal">
+                    <Button
+                        Classes="small"
+                        Content=" ▷"
+                        Height="30"
+                        Margin="4,0"
+                        Padding="3"
+                        Width="30" />
+                    <Button
+                        Classes="small"
+                        Content="INT-LRA"
+                        Margin="4,0" />
+                </StackPanel>
+            </Grid>
+            <!--  详细面板  -->
+            <StackPanel
+                Grid.Column="1"
+                Margin="0,15,10,15"
+                Width="170">
+                <mcto:LargeLabelControl LargeText="0.0 LUFS" SmallText="瞬时" />
+                <mcto:LargeLabelControl
+                    Background="{DynamicResource 'LightBlueBrush '}"
+                    LargeText="0.0 LUFS"
+                    SmallText="整合" />
+                <mcto:LargeLabelControl LargeText="0.0 LUFS" SmallText="响度范围" />
+                <mcto:LargeLabelControl LargeText="0.0 LUFS" SmallText="实时动态" />
+
+                <mcto:LargeLabelControl
+                    LargeText="0.0 LUFS"
+                    Margin="0,0,0,16"
+                    SmallText="AVG.DYNAMIC (PLR)" />
+                <mcto:LargeLabelControl
+                    Classes="button"
+                    LargeText="0.0 LUFS"
+                    Margin="0,0,0,4"
+                    SmallText="瞬间最大" />
+                <mcto:LargeLabelControl
+                    Classes="button"
+                    LargeText="0.0 LUFS"
+                    Margin="0,0,0,4"
+                    SmallText="短期最大" />
+                <mcto:LargeLabelControl
+                    Classes="button"
+                    LargeText="0.0 Db"
+                    Margin="0,0,0,4"
+                    SmallText="真峰值" />
+
+                <!--  配置按钮  -->
+                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+                    <Button
+                        Classes="small"
+                        Content=" ▷"
+                        Height="30"
+                        Margin="4,0"
+                        Padding="3"
+                        Width="30" />
+                    <Button
+                        Classes="small"
+                        Content="INT-LRA"
+                        Margin="4,0" />
+                </StackPanel>
+
+            </StackPanel>
+
+            <!--  图像显示  -->
+            <Rectangle Fill="Black" Grid.Column="2" />
+        </Grid>
+
+        <!--  底栏立  -->
+        <Grid
+            ColumnDefinitions="Auto, Auto, *, Auto, Auto, Auto, Auto, Auto"
+            Grid.Row="2"
+            Margin="8">
+            <Button
+                Content="立体声"
+                Grid.Column="0"
+                Margin="0,0,8,0" />
+            <Button
+                Content="模式"
+                Grid.Column="1"
+                Margin="0,0,8,0" />
+            <Button
+                Content="10 秒"
+                Grid.Column="3"
+                Margin="0,0,8,0" />
+            <Button
+                Content="继续"
+                Grid.Column="4"
+                Margin="0,0,8,0" />
+            <Rectangle
+                Fill="Orange"
+                Grid.Column="5"
+                Margin="0,0,8,0"
+                Width="30" />
+            <Rectangle
+                Fill="Red"
+                Grid.Column="6"
+                Margin="0,0,8,0"
+                Width="30" />
+        </Grid>
+
+    </Grid>
+</Window>
