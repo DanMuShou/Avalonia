@@ -1,7 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls.Primitives;
 
-namespace AvaloniaStudy.Controls;
+namespace AvaloniaStudy.Styles;
 
 public class LargeLabelControl : TemplatedControl
 {

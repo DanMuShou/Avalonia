@@ -1,0 +1,18 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:AvaloniaStudy.Styles">
+    <Design.PreviewWith>
+        <controls:AnimationPopup />
+    </Design.PreviewWith>
+
+    <Style Selector="controls|AnimationPopup">
+        <!-- Set Defaults -->
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border BorderThickness="1" BorderBrush="Black">
+                    <ContentPresenter Content="{TemplateBinding Content}"></ContentPresenter>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+</Styles>

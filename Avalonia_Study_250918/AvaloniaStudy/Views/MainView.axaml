@@ -1,16 +1,21 @@
-<Window
-    Title="AvaloniaStudy"
-    d:DesignHeight="650"
-    d:DesignWidth="700"
-    mc:Ignorable="d"
-    x:Class="AvaloniaStudy.MainWindow"
+﻿<UserControl
+    x:Class="AvaloniaStudy.Views.MainView"
     xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:mcto="clr-namespace:AvaloniaStudy.Controls"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:styles="clr-namespace:AvaloniaStudy.Styles"
+    xmlns:viewModels="clr-namespace:AvaloniaStudy.ViewModels"
+    d:DesignHeight="630"
+    d:DesignWidth="1048"
+    x:DataType="viewModels:MainViewModel"
+    mc:Ignorable="d">
 
-    <Window.Styles>
+    <Design.DataContext>
+        <viewModels:MainViewModel />
+    </Design.DataContext>
+
+    <UserControl.Styles>
         <Style Selector="Button.small">
             <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="White" />
@@ -25,15 +30,59 @@
             <Setter Property="Background" Value="Purple" />
             <Setter Property="Foreground" Value="White" />
         </Style>
-    </Window.Styles>
+        <Style Selector="styles|AnimationPopup.channelPopup">
+            <Setter Property="Width" Value="0" />
+            <Setter Property="Height" Value="0" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition
+                        Easing="QuarticEaseOut"
+                        Property="Width"
+                        Duration="0:0:0.15" />
+                    <DoubleTransition
+                        Easing="QuarticEaseOut"
+                        Property="Height"
+                        Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
+        </Style>
+        <Style Selector="styles|AnimationPopup.channelPopup.open">
+            <Setter Property="Width" Value="300" />
+            <Setter Property="Height" Value="600" />
+        </Style>
+    </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto, *, Auto">
+    <!--  主网格  -->
+    <Grid Name="MainGrid" RowDefinitions="Auto, *, Auto">
+        <!--  频道配置弹出面板关闭区域  -->
+        <Border
+            Grid.Row="0"
+            Grid.RowSpan="3"
+            Background="Transparent"
+            IsVisible="{Binding IsChannelConfigOpen}"
+            PointerPressed="InputElement_OnPointerPressed"
+            ZIndex="1" />
+        <!--  频道配置弹出面板  -->
+        <styles:AnimationPopup
+            x:Name="ChannelConfigPopupBorder"
+            Grid.Row="0"
+            Grid.RowSpan="3"
+            Margin="8,0,0,8"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Bottom"
+            Background="Red"
+            Classes="channelPopup"
+            Classes.open="{Binding IsChannelConfigOpen}"
+            ZIndex="2">
+            <Label Content="1231231" Background="Red"></Label>
+        </styles:AnimationPopup>
+
         <!--  标题栏  -->
         <Grid
-            Background="{DynamicResource 'MidGreyBrush '}"
-            ColumnDefinitions="Auto, Auto, *, Auto, Auto"
             Grid.Row="0"
-            Height="40">
+            Height="40"
+            Background="{DynamicResource 'MidGreyBrush '}"
+            ColumnDefinitions="Auto, Auto, *, Auto, Auto">
             <Grid.Styles>
                 <Style Selector="Button">
                     <Setter Property="Background" Value="Transparent" />
@@ -49,7 +98,7 @@
                 <Style Selector="Button /template/ ContentPresenter">
                     <Setter Property="Transitions">
                         <Transitions>
-                            <TransformOperationsTransition Duration="0:0:0.2" Property="RenderTransform" />
+                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" />
                         </Transitions>
                     </Setter>
                 </Style>
@@ -60,48 +109,52 @@
                 </Style>
             </Grid.Styles>
             <Button
-                Content="显示"
                 Grid.Column="0"
-                Margin="8,0,0,0" />
+                Margin="8,0,0,0"
+                Content="显示" />
             <Button
-                Content="上锁"
                 Grid.Column="1"
-                Margin="4,0" />
+                Margin="4,0"
+                Content="上锁" />
             <StackPanel
                 Grid.Column="2"
                 HorizontalAlignment="Center"
-                Orientation="Horizontal"
-                VerticalAlignment="Center">
-                <TextBlock FontWeight="Black" Text="AVALONIA" />
-                <TextBlock Text="  LOUDNESS METER" />
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,16,0"
+                    FontSize="24"
+                    FontWeight="Black"
+                    Text="{Binding BoldTitle}" />
+                <TextBlock FontSize="24" Text="{Binding RegularTitle}" />
             </StackPanel>
             <Button
-                Content="分享"
                 Grid.Column="3"
-                Margin="4,0" />
+                Margin="4,0"
+                Content="分享" />
             <Button
-                Content="设置"
                 Grid.Column="4"
-                Margin="0,0,8,0" />
+                Margin="0,0,8,0"
+                Content="设置" />
         </Grid>
 
         <!--  主显示区  -->
         <Grid
+            Grid.Row="1"
             Background="{DynamicResource 'DarkBlueBrush '}"
-            ColumnDefinitions="Auto, Auto, *"
-            Grid.Row="1">
+            ColumnDefinitions="Auto, Auto, *">
             <!--  音量条  -->
             <Grid
                 Grid.Column="0"
+                Width="150"
                 Margin="0,16"
-                RowDefinitions="*, Auto, Auto"
-                Width="150">
+                RowDefinitions="*, Auto, Auto">
 
                 <!--  音量刻度  -->
                 <Grid
-                    ColumnDefinitions="Auto, *, Auto, Auto"
                     Grid.Row="0"
                     Margin="8,0"
+                    ColumnDefinitions="Auto, *, Auto, Auto"
                     RowDefinitions="3*, 3*, 3*, 9*, 5*, 4*, 9*, 9*, 9*, 6*, *">
                     <Grid.Styles>
                         <Style Selector="TextBlock">
@@ -112,134 +165,134 @@
                     </Grid.Styles>
 
                     <TextBlock
-                        Grid.Column="0"
                         Grid.Row="0"
+                        Grid.Column="0"
                         Text="0 —" />
                     <TextBlock
-                        Grid.Column="0"
                         Grid.Row="1"
+                        Grid.Column="0"
                         Text="-3 —" />
                     <TextBlock
-                        Grid.Column="0"
                         Grid.Row="2"
+                        Grid.Column="0"
                         Text="-6 —" />
                     <TextBlock
-                        Grid.Column="0"
                         Grid.Row="3"
+                        Grid.Column="0"
                         Text="-9 —" />
                     <TextBlock
-                        Grid.Column="0"
                         Grid.Row="4"
+                        Grid.Column="0"
                         Text="-18 —" />
                     <TextBlock
-                        Grid.Column="0"
                         Grid.Row="5"
+                        Grid.Column="0"
                         Text="-23 —" />
                     <TextBlock
-                        Grid.Column="0"
                         Grid.Row="6"
+                        Grid.Column="0"
                         Text="-27 —" />
                     <TextBlock
-                        Grid.Column="0"
                         Grid.Row="7"
+                        Grid.Column="0"
                         Text="-36 —" />
                     <TextBlock
-                        Grid.Column="0"
                         Grid.Row="8"
+                        Grid.Column="0"
                         Text="-45 —" />
                     <TextBlock
-                        Grid.Column="0"
                         Grid.Row="9"
+                        Grid.Column="0"
                         Text="-54 —" />
                     <TextBlock
-                        Grid.Column="0"
                         Grid.Row="10"
+                        Grid.Column="0"
                         Text="asasdd" />
 
                     <Grid
-                        Grid.Column="1"
                         Grid.Row="0"
                         Grid.RowSpan="11"
-                        RowDefinitions="23*, 37*"
-                        Width="20">
+                        Grid.Column="1"
+                        Width="20"
+                        RowDefinitions="23*, 37*">
                         <Rectangle
-                            Fill="Red"
                             Grid.Row="0"
+                            Width="20"
                             Margin="0,8,0,-8"
-                            Width="20" />
+                            Fill="Red" />
                         <Rectangle
-                            Fill="White"
                             Grid.Row="1"
+                            Width="20"
                             Margin="0,8,0,0"
-                            Width="20" />
+                            Fill="White" />
                     </Grid>
 
                     <TextBlock
-                        Grid.Column="2"
                         Grid.Row="0"
+                        Grid.Column="2"
                         Text="—" />
                     <TextBlock
-                        Grid.Column="2"
                         Grid.Row="1"
+                        Grid.Column="2"
                         Text="—" />
                     <TextBlock
-                        Grid.Column="2"
                         Grid.Row="2"
+                        Grid.Column="2"
                         Text="—" />
                     <TextBlock
-                        Grid.Column="2"
                         Grid.Row="3"
+                        Grid.Column="2"
                         Text="—" />
                     <TextBlock
-                        Grid.Column="2"
                         Grid.Row="4"
+                        Grid.Column="2"
                         Text="—" />
                     <TextBlock
-                        Grid.Column="2"
                         Grid.Row="5"
+                        Grid.Column="2"
                         Text="—" />
                     <TextBlock
-                        Grid.Column="2"
                         Grid.Row="6"
+                        Grid.Column="2"
                         Text="—" />
                     <TextBlock
-                        Grid.Column="2"
                         Grid.Row="7"
+                        Grid.Column="2"
                         Text="—" />
                     <TextBlock
-                        Grid.Column="2"
                         Grid.Row="8"
+                        Grid.Column="2"
                         Text="—" />
                     <TextBlock
-                        Grid.Column="2"
                         Grid.Row="9"
+                        Grid.Column="2"
                         Text="—" />
                     <TextBlock
-                        Grid.Column="2"
                         Grid.Row="10"
+                        Grid.Column="2"
                         Text="---" />
 
                     <!--  箭头  -->
                     <Canvas
-                        Grid.Column="3"
                         Grid.Row="0"
                         Grid.RowSpan="11"
+                        Grid.Column="3"
                         Width="20">
                         <Rectangle
                             Canvas.Top="10"
-                            Fill="White"
+                            Width="20"
                             Height="20"
-                            Width="20" />
+                            Fill="White" />
                     </Canvas>
                 </Grid>
 
                 <!--  LUFS 文本  -->
                 <TextBlock
+                    Grid.Row="1"
+                    Margin="0,5"
+                    HorizontalAlignment="Center"
                     FontSize="20"
                     Foreground="White"
-                    Grid.Row="1"
-                    HorizontalAlignment="Center"
-                    Margin="0,5"
                     Text="LUFS" />
 
                 <!--  音量条按钮  -->
@@ -248,104 +301,109 @@
                     HorizontalAlignment="Center"
                     Orientation="Horizontal">
                     <Button
-                        Classes="small"
-                        Content=" ▷"
+                        Width="30"
                         Height="30"
                         Margin="4,0"
                         Padding="3"
-                        Width="30" />
-                    <Button
                         Classes="small"
-                        Content="INT-LRA"
-                        Margin="4,0" />
+                        Content=" ▷" />
+                    <Button
+                        Margin="4,0"
+                        Classes="small"
+                        Content="INT-LRA" />
                 </StackPanel>
             </Grid>
             <!--  详细面板  -->
             <StackPanel
                 Grid.Column="1"
-                Margin="0,15,10,15"
-                Width="170">
-                <mcto:LargeLabelControl LargeText="0.0 LUFS" SmallText="瞬时" />
-                <mcto:LargeLabelControl
+                Width="170"
+                Margin="0,15,10,15">
+                <styles:LargeLabelControl LargeText="0.0 LUFS" SmallText="瞬时" />
+                <styles:LargeLabelControl
                     Background="{DynamicResource 'LightBlueBrush '}"
                     LargeText="0.0 LUFS"
                     SmallText="整合" />
-                <mcto:LargeLabelControl LargeText="0.0 LUFS" SmallText="响度范围" />
-                <mcto:LargeLabelControl LargeText="0.0 LUFS" SmallText="实时动态" />
+                <styles:LargeLabelControl LargeText="0.0 LUFS" SmallText="响度范围" />
+                <styles:LargeLabelControl LargeText="0.0 LUFS" SmallText="实时动态" />
 
-                <mcto:LargeLabelControl
-                    LargeText="0.0 LUFS"
+                <styles:LargeLabelControl
                     Margin="0,0,0,16"
+                    LargeText="0.0 LUFS"
                     SmallText="AVG.DYNAMIC (PLR)" />
-                <mcto:LargeLabelControl
+                <styles:LargeLabelControl
+                    Margin="0,0,0,4"
                     Classes="button"
                     LargeText="0.0 LUFS"
-                    Margin="0,0,0,4"
                     SmallText="瞬间最大" />
-                <mcto:LargeLabelControl
+                <styles:LargeLabelControl
+                    Margin="0,0,0,4"
                     Classes="button"
                     LargeText="0.0 LUFS"
-                    Margin="0,0,0,4"
                     SmallText="短期最大" />
-                <mcto:LargeLabelControl
+                <styles:LargeLabelControl
+                    Margin="0,0,0,4"
                     Classes="button"
                     LargeText="0.0 Db"
-                    Margin="0,0,0,4"
                     SmallText="真峰值" />
 
                 <!--  配置按钮  -->
                 <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
                     <Button
-                        Classes="small"
-                        Content=" ▷"
+                        Width="30"
                         Height="30"
                         Margin="4,0"
                         Padding="3"
-                        Width="30" />
-                    <Button
                         Classes="small"
-                        Content="INT-LRA"
-                        Margin="4,0" />
+                        Content=" ▷" />
+                    <Button
+                        Margin="4,0"
+                        Classes="small"
+                        Content="INT-LRA" />
                 </StackPanel>
 
             </StackPanel>
 
             <!--  图像显示  -->
-            <Rectangle Fill="Black" Grid.Column="2" />
+            <Rectangle Grid.Column="2" Fill="Black" />
         </Grid>
 
         <!--  底栏立  -->
         <Grid
-            ColumnDefinitions="Auto, Auto, *, Auto, Auto, Auto, Auto, Auto"
             Grid.Row="2"
-            Margin="8">
+            Margin="8"
+            Background="White"
+            ColumnDefinitions="Auto, Auto, *, Auto, Auto, Auto, Auto, Auto">
             <Button
-                Content="立体声"
+                x:Name="ChannelConfigBut"
                 Grid.Column="0"
-                Margin="0,0,8,0" />
+                Margin="0,0,8,0"
+                Command="{Binding ChannelConfigButPressedCommand}"
+                Content="频道配置" >
+            </Button>
             <Button
-                Content="模式"
                 Grid.Column="1"
-                Margin="0,0,8,0" />
+                Margin="0,0,8,0"
+                Content="模式" />
             <Button
-                Content="10 秒"
                 Grid.Column="3"
-                Margin="0,0,8,0" />
+                Margin="0,0,8,0"
+                Content="10 秒" />
             <Button
-                Content="继续"
                 Grid.Column="4"
-                Margin="0,0,8,0" />
+                Margin="0,0,8,0"
+                Content="继续" />
             <Rectangle
-                Fill="Orange"
                 Grid.Column="5"
+                Width="30"
                 Margin="0,0,8,0"
-                Width="30" />
+                Fill="Orange" />
             <Rectangle
-                Fill="Red"
                 Grid.Column="6"
+                Width="30"
                 Margin="0,0,8,0"
-                Width="30" />
+                Fill="Red" />
         </Grid>
 
     </Grid>
-</Window>
+
+</UserControl>

@@ -1,0 +1,15 @@
+<Window
+    x:Class="AvaloniaStudy.Views.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:views="clr-namespace:AvaloniaStudy.Views"
+    Title="AvaloniaStudy"
+    Width="1048"
+    Height="630"
+    d:DesignHeight="630"
+    d:DesignWidth="1048"
+    mc:Ignorable="d">
+    <views:MainView />
+</Window>

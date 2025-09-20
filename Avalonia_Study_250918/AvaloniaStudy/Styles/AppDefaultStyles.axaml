@@ -1,0 +1,9 @@
+﻿<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Design.PreviewWith>
+        <Label Content="My Title" />
+    </Design.PreviewWith>
+
+    <Style Selector="Label">
+        <Setter Property="Foreground" Value="Black" />
+    </Style>
+</Styles>

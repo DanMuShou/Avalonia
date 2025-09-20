@@ -1,13 +1,15 @@
 <Application
-    RequestedThemeVariant="Default"
     x:Class="AvaloniaStudy.App"
     xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    RequestedThemeVariant="Default">
     <!--  "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options.  -->
 
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="Controls/LargeLabelControl.axaml" />
+        <StyleInclude Source="Styles/LargeLabelControl.axaml" />
+        <StyleInclude Source="Styles/AppDefaultStyles.axaml" />
+        <StyleInclude Source="Styles/AnimationPopup.axaml" />
     </Application.Styles>
 
     <Application.Resources>

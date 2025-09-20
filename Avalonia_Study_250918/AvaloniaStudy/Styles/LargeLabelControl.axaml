@@ -1,42 +1,42 @@
 ﻿<Styles
     xmlns="https://github.com/avaloniaui"
-    xmlns:controls="using:AvaloniaStudy.Controls"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:styles="clr-namespace:AvaloniaStudy.Styles">
     <Design.PreviewWith>
         <Border Background="{DynamicResource 'DarkBlueBrush '}">
             <StackPanel Margin="40">
-                <controls:LargeLabelControl Margin="16" />
-                <controls:LargeLabelControl Classes="button" />
+                <styles:LargeLabelControl Margin="16" />
+                <styles:LargeLabelControl Classes="button" />
             </StackPanel>
         </Border>
     </Design.PreviewWith>
 
-    <Style Selector="controls|LargeLabelControl">
+    <Style Selector="styles|LargeLabelControl">
         <Setter Property="Background" Value="{DynamicResource 'MidBlueBrush '}" />
         <Setter Property="Foreground" Value="White" />
 
         <Setter Property="Template">
             <ControlTemplate>
-                <Border Background="{TemplateBinding Background}" Padding="15,6">
+                <Border Padding="15,6" Background="{TemplateBinding Background}">
                     <StackPanel>
                         <StackPanel.Styles>
-                            <Style Selector="TextBlock">
+                            <Style Selector="Label">
                                 <Setter Property="Padding" Value="0" />
+                                <Setter Property="Foreground" Value="White" />
                                 <Setter Property="HorizontalAlignment" Value="Center" />
                                 <Setter Property="VerticalAlignment" Value="Center" />
                             </Style>
                         </StackPanel.Styles>
-                        <TextBlock FontSize="21" Text="{TemplateBinding LargeText}" />
-                        <TextBlock FontSize="11" Text="{TemplateBinding SmallText}" />
+                        <Label Content="{TemplateBinding LargeText}" FontSize="21" />
+                        <Label Content="{TemplateBinding SmallText}" FontSize="11" />
                     </StackPanel>
                 </Border>
             </ControlTemplate>
         </Setter>
     </Style>
 
-    <Style Selector="controls|LargeLabelControl.button">
+    <Style Selector="styles|LargeLabelControl.button">
         <Setter Property="Background" Value="{DynamicResource 'MidBlueBrush '}" />
-        <Setter Property="Foreground" Value="Red" />
 
         <Setter Property="Template">
             <ControlTemplate>
@@ -44,6 +44,7 @@
                     <StackPanel.Styles>
                         <Style Selector="Label">
                             <Setter Property="Padding" Value="0" />
+                            <Setter Property="Foreground" Value="White" />
                             <Setter Property="HorizontalAlignment" Value="Center" />
                             <Setter Property="HorizontalContentAlignment" Value="Center" />
                             <Setter Property="VerticalAlignment" Value="Center" />
@@ -51,12 +52,12 @@
                         </Style>
                     </StackPanel.Styles>
                     <Label
+                        Margin="0,0,0,4"
+                        Padding="8,4"
                         Background="{TemplateBinding Background}"
                         Content="{TemplateBinding LargeText}"
                         CornerRadius="20"
-                        FontSize="21"
-                        Margin="0,0,0,4"
-                        Padding="4" />
+                        FontSize="21" />
                     <Label Content="{TemplateBinding SmallText}" FontSize="11" />
                 </StackPanel>
             </ControlTemplate>
