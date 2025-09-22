@@ -4,7 +4,9 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:AvaloniaStudy.Models"
     xmlns:styles="clr-namespace:AvaloniaStudy.Styles"
+    xmlns:toolkit="using:CommunityToolkit.Mvvm.Collections"
     xmlns:viewModels="clr-namespace:AvaloniaStudy.ViewModels"
     d:DesignHeight="630"
     d:DesignWidth="1048"
@@ -30,51 +32,33 @@
             <Setter Property="Background" Value="Purple" />
             <Setter Property="Foreground" Value="White" />
         </Style>
-        <Style Selector="styles|AnimationPopup.channelPopup">
-            <Setter Property="Width" Value="0" />
-            <Setter Property="Height" Value="0" />
-            <Setter Property="Transitions">
-                <Transitions>
-                    <DoubleTransition
-                        Easing="QuarticEaseOut"
-                        Property="Width"
-                        Duration="0:0:0.15" />
-                    <DoubleTransition
-                        Easing="QuarticEaseOut"
-                        Property="Height"
-                        Duration="0:0:0.15" />
-                </Transitions>
-            </Setter>
-        </Style>
-        <Style Selector="styles|AnimationPopup.channelPopup.open">
-            <Setter Property="Width" Value="300" />
-            <Setter Property="Height" Value="600" />
-        </Style>
     </UserControl.Styles>
 
     <!--  主网格  -->
     <Grid Name="MainGrid" RowDefinitions="Auto, *, Auto">
-        <!--  频道配置弹出面板关闭区域  -->
-        <Border
-            Grid.Row="0"
-            Grid.RowSpan="3"
-            Background="Transparent"
-            IsVisible="{Binding IsChannelConfigOpen}"
-            PointerPressed="InputElement_OnPointerPressed"
-            ZIndex="1" />
         <!--  频道配置弹出面板  -->
         <styles:AnimationPopup
             x:Name="ChannelConfigPopupBorder"
             Grid.Row="0"
             Grid.RowSpan="3"
-            Margin="8,0,0,8"
-            HorizontalAlignment="Left"
-            VerticalAlignment="Bottom"
-            Background="Red"
-            Classes="channelPopup"
-            Classes.open="{Binding IsChannelConfigOpen}"
-            ZIndex="2">
-            <Label Content="1231231" Background="Red"></Label>
+            AnimationTime="0:0:0.15"
+            IsOpen="{Binding IsChannelConfigOpen, Mode=TwoWay}"
+            UnderlayOpacity="0.3"
+            ZIndex="10">
+            <Border
+                Padding="20"
+                Background="White"
+                BorderBrush="#ccc"
+                BorderThickness="1"
+                CornerRadius="5">
+                <ItemsControl Items="{Binding ChannelConfigItems}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="toolkit:ObservableGroup(x:String, models:ChannelConfigItem)">
+                            <Label Content="{Binding Key}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
         </styles:AnimationPopup>
 
         <!--  标题栏  -->
@@ -378,8 +362,7 @@
                 Grid.Column="0"
                 Margin="0,0,8,0"
                 Command="{Binding ChannelConfigButPressedCommand}"
-                Content="频道配置" >
-            </Button>
+                Content="{Binding SelectChannelConfigText}" />
             <Button
                 Grid.Column="1"
                 Margin="0,0,8,0"
@@ -403,7 +386,5 @@
                 Margin="0,0,8,0"
                 Fill="Red" />
         </Grid>
-
     </Grid>
-
 </UserControl>

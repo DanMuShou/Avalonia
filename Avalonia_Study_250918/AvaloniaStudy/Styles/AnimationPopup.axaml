@@ -1,17 +1,22 @@
-﻿<Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:controls="using:AvaloniaStudy.Styles">
+﻿<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:AvaloniaStudy.Styles">
     <Design.PreviewWith>
-        <controls:AnimationPopup />
+        <Grid>
+            <controls:AnimationPopup>
+                <Button Content="My Button" />
+            </controls:AnimationPopup>
+        </Grid>
     </Design.PreviewWith>
 
     <Style Selector="controls|AnimationPopup">
-        <!-- Set Defaults -->
+        <!--  Set Defaults  -->
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
         <Setter Property="Template">
             <ControlTemplate>
-                <Border BorderThickness="1" BorderBrush="Black">
-                    <ContentPresenter Content="{TemplateBinding Content}"></ContentPresenter>
-                </Border>
+                <ContentPresenter Content="{TemplateBinding Content}" />
             </ControlTemplate>
         </Setter>
     </Style>

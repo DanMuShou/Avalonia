@@ -1,5 +1,4 @@
-﻿using Avalonia;
-using Avalonia.Controls.Primitives;
+﻿using Avalonia.Controls.Primitives;
 
 namespace AvaloniaStudy.Styles;
 

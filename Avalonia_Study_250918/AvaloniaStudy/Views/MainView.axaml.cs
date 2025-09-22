@@ -1,9 +1,9 @@
-﻿using System.Threading.Tasks;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Markup.Xaml;
+using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
+using AvaloniaStudy.Services;
 using AvaloniaStudy.ViewModels;
 
 namespace AvaloniaStudy.Views;
@@ -13,21 +13,27 @@ public partial class MainView : UserControl
     public MainView()
     {
         InitializeComponent();
-        DataContext = new MainViewModel();
+        DataContext = new MainViewModel(new AudioService());
     }
 
-    protected override void OnSizeChanged(SizeChangedEventArgs e)
+    protected override async void OnLoaded(RoutedEventArgs e)
     {
-        base.OnSizeChanged(e);
-        var position = ChannelConfigBut.TranslatePoint(new Point(), MainGrid)!.Value;
-        ChannelConfigPopupBorder.Margin = new Thickness(
-            position.X,
-            0,
-            0,
-            MainGrid.Bounds.Height - position.Y - ChannelConfigBut.Bounds.Height
-        );
+        await ((MainViewModel)DataContext).LoadSettingsCommand.ExecuteAsync(null);
+        base.OnLoaded(e);
     }
 
-    private void InputElement_OnPointerPressed(object? sender, PointerPressedEventArgs e) =>
-        ((MainViewModel)DataContext).ChannelConfigButPressedCommand.Execute(null);
+    public override void Render(DrawingContext context)
+    {
+        base.Render(context);
+        var position = ChannelConfigBut.TranslatePoint(new Point(), MainGrid)!.Value;
+        Dispatcher.UIThread.Post(() =>
+        {
+            ChannelConfigPopupBorder.Margin = new Thickness(
+                position.X,
+                0,
+                0,
+                MainGrid.Bounds.Height - position.Y - ChannelConfigBut.Bounds.Height
+            );
+        });
+    }
 }
