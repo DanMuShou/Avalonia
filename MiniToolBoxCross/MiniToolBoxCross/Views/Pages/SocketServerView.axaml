@@ -1,0 +1,56 @@
+﻿<UserControl
+    d:DesignHeight="450"
+    d:DesignWidth="400"
+    mc:Ignorable="d"
+    x:Class="MiniToolBoxCross.Views.Pages.SocketServerView"
+    x:DataType="vm:SocketServerViewModel"
+    x:Name="Root"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:u="https://irihi.tech/ursa"
+    xmlns:vm="clr-namespace:MiniToolBoxCross.ViewModels.Pages"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Theme="{DynamicResource CardBorder}">
+        <ScrollViewer>
+            <Grid RowDefinitions="Auto,16,1*">
+                <StackPanel Grid.Row="0" Orientation="Horizontal">
+                    <u:EnumSelector EnumType="{Binding ServerType}" />
+                    <Button
+                        Command="{Binding OpenConfigureServerDialogCommand}"
+                        Content="添加服务器"
+                        Margin="4,0,0,0" />
+                </StackPanel>
+
+                <ItemsControl Grid.Row="2" ItemsSource="{Binding SocketServerModels}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <u:ElasticWrapPanel ItemSpacing="4" LineSpacing="4" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Theme="{DynamicResource CardBorder}">
+                                <StackPanel>
+                                    <SelectableTextBlock Classes="H1" Text="{Binding Title}" />
+                                    <StackPanel
+                                        HorizontalAlignment="Right"
+                                        Margin="0,8,0,0"
+                                        Orientation="Horizontal"
+                                        Spacing="4">
+                                        <Button Content="详情" />
+                                        <Button
+                                            Classes="Tertiary"
+                                            Command="{Binding #Root.DataContext.CopyIpCommand, x:DataType=vm:SocketServerViewModel}"
+                                            CommandParameter="{Binding}"
+                                            Content="复制" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Grid>
+        </ScrollViewer>
+    </Border>
+</UserControl>

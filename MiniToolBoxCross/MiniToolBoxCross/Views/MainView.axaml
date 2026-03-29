@@ -1,0 +1,37 @@
+<UserControl
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    mc:Ignorable="d"
+    x:Class="MiniToolBoxCross.Views.MainView"
+    x:DataType="vm:MainViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:pa="using:MiniToolBoxCross.Views.Pages"
+    xmlns:u="https://irihi.tech/ursa"
+    xmlns:uc="using:MiniToolBoxCross.Views.UserControls"
+    xmlns:vm="using:MiniToolBoxCross.ViewModels"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <ScrollViewer HorizontalAlignment="Stretch" Margin="16">
+            <Grid RowDefinitions="160, *">
+                <uc:LogBox
+                    DataContext="{Binding LogBoxViewModel}"
+                    Grid.Row="0"
+                    MaxHeight="160" />
+                <TabControl
+                    Grid.Row="1"
+                    HorizontalAlignment="Stretch"
+                    Margin="0,16,0,0">
+                    <TabItem Header="服务器">
+                        <pa:SocketServerView DataContext="{Binding SocketServerViewModel}" />
+                    </TabItem>
+                    <TabItem Header="客户端">
+                        <pa:SocketClientView DataContext="{Binding SocketClientViewModel}" />
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </ScrollViewer>
+        <u:OverlayDialogHost HorizontalAlignment="Stretch" />
+    </Grid>
+</UserControl>

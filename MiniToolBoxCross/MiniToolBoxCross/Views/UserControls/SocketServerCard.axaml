@@ -1,0 +1,37 @@
+﻿<UserControl
+    mc:Ignorable="d"
+    x:Class="MiniToolBoxCross.Views.UserControls.SocketServerCard"
+    x:DataType="vm:SocketServerCardViewModel"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:MiniToolBoxCross.ViewModels.UserControls"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Theme="{DynamicResource CardBorder}">
+        <StackPanel>
+            <SelectableTextBlock Classes="H1" Text="{Binding Title}" />
+            <SelectableTextBlock Margin="0,8,0,0" Text="This is some Info " />
+            <SelectableTextBlock Margin="0,4,0,0" Text="This is some Info " />
+            <StackPanel
+                HorizontalAlignment="Right"
+                Margin="0,8,0,0"
+                Orientation="Horizontal"
+                Spacing="4">
+                <Button Content="详情" />
+                <Button
+                    Classes="Tertiary"
+                    Command="{Binding CopyIpCommand}"
+                    Content="复制" />
+                <Button Command="{Binding StartServerCommand}" Content="启动" />
+                <Button
+                    Classes="Danger"
+                    Command="{Binding StopServerCommand}"
+                    Content="停止" />
+                <Button
+                    Classes="Danger"
+                    Command="{Binding RestartServerCommand}"
+                    Content="重启" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>
