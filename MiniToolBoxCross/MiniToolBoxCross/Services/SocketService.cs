@@ -1,13 +1,22 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MiniToolBoxCross.Common.Global;
+using MiniToolBoxCross.Services.Commands;
+using Serilog;
 using SuperSocket;
+using SuperSocket.Command;
 using SuperSocket.Connection;
+using SuperSocket.ProtoBase;
 using SuperSocket.Server;
 using SuperSocket.Server.Abstractions;
 using SuperSocket.Server.Abstractions.Session;
+using SuperSocket.Server.Host;
 
 namespace MiniToolBoxCross.Services;
 
@@ -45,7 +54,7 @@ public class SocketService<TStringPackageInfo>
 
     protected override async ValueTask OnSessionClosedAsync(IAppSession session, CloseEventArgs e)
     {
-        if (session is SocketSession { IsAuthenticated: true } SocketSession)
+        if (session is SocketSession { IsAuthenticated: true })
         {
             _authenticatedSessions.TryRemove(session.SessionID, out _);
         }
@@ -115,4 +124,50 @@ public class SocketService<TStringPackageInfo>
             session.LoginInfo?.Name
         );
     }
+
+    // public static IServer BuildSuperSocket(
+    //     List<ListenOptions> listenOptionsList,
+    //     bool useUdp = false
+    // )
+    // {
+    //     var socketHostBuilder = SuperSocketHostBuilder
+    //         .Create<StringPackageInfo, CommandLinePipelineFilter>()
+    //         .UseHostedService<SocketService<StringPackageInfo>>()
+    //         .UseSession<SocketSession>()
+    //         .UseCommand(
+    //             (commandOptions) =>
+    //             {
+    //                 commandOptions.AddCommand<LoginCommand>();
+    //                 // commandOptions.AddGlobalCommandFilter<AuthAsyncCommandFilterAttribute>();
+    //             }
+    //         )
+    //         .UseInProcSessionContainer()
+    //         .ConfigureSuperSocket(options =>
+    //             listenOptionsList.ForEach(o => options.AddListener(o))
+    //         );
+    //
+    //     if (useUdp)
+    //     {
+    //         socketHostBuilder.UseUdp();
+    //     }
+    //
+    //     var hostBuilder = socketHostBuilder
+    //         .ConfigureServices(services =>
+    //         {
+    //             services.AddSingleton<CrossSetting>();
+    //             services.AddLogging(builder =>
+    //             {
+    //                 builder.SetMinimumLevel(LogLevel.Debug);
+    //             });
+    //         })
+    //         .ConfigureLogging(
+    //             (_, loggingBuilder) =>
+    //             {
+    //                 loggingBuilder.ClearProviders();
+    //                 loggingBuilder.AddSerilog(dispose: true);
+    //             }
+    //         );
+    //
+    //     return hostBuilder.BuildAsServer();
+    // }
 }

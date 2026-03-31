@@ -5,4 +5,5 @@ public enum SocketCommandType
     Response,
     Login,
     Chat,
+    Game,
 }

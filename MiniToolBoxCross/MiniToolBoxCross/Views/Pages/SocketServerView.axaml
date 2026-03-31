@@ -30,23 +30,44 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Theme="{DynamicResource CardBorder}">
-                                <StackPanel>
-                                    <SelectableTextBlock Classes="H1" Text="{Binding Title}" />
-                                    <StackPanel
-                                        HorizontalAlignment="Right"
-                                        Margin="0,8,0,0"
-                                        Orientation="Horizontal"
-                                        Spacing="4">
-                                        <Button Content="详情" />
-                                        <Button
-                                            Classes="Tertiary"
-                                            Command="{Binding #Root.DataContext.CopyIpCommand, x:DataType=vm:SocketServerViewModel}"
-                                            CommandParameter="{Binding}"
-                                            Content="复制" />
+                            <u:LoadingContainer IsLoading="{Binding IsBusy}" LoadingMessage="加载中...">
+                                <Border Theme="{DynamicResource CardBorder}">
+                                    <StackPanel>
+                                        <SelectableTextBlock
+                                            Classes="H6"
+                                            Text="名称"
+                                            Theme="{DynamicResource TitleSelectableTextBlock}" />
+                                        <u:Descriptions ItemAlignment="Left" Margin="0,16,0,0">
+                                            <u:DescriptionsItem Content="{Binding ServerNetInfo}" Label="服务器: " />
+                                            <u:DescriptionsItem Content="{Binding LocalNetInfo}" Label="本地: " />
+                                        </u:Descriptions>
+                                        <StackPanel
+                                            HorizontalAlignment="Right"
+                                            Orientation="Horizontal"
+                                            Spacing="4">
+                                            <Button
+                                                Classes="Tertiary"
+                                                Command="{Binding #Root.DataContext.CopyIpCommand, x:DataType=vm:SocketServerViewModel}"
+                                                Content="复制" />
+                                            <Button Command="{Binding #Root.DataContext.StartPortForwardingServerCommand, x:DataType=vm:SocketServerViewModel}" Content="启动" />
+                                            <Button
+                                                Classes="Danger"
+                                                Command="{Binding #Root.DataContext.StopPortForwardingServerCommand, x:DataType=vm:SocketServerViewModel}"
+                                                Content="停止" />
+                                            <Button
+                                                Classes="Warning"
+                                                Command="{Binding #Root.DataContext.RestartPortForwardingServerCommand, x:DataType=vm:SocketServerViewModel}"
+                                                CommandParameter="{Binding Id}"
+                                                Content="重启" />
+                                            <!-- <Button
+                                                Classes="Danger"
+                                                Command="{Binding #Root.DataContext.DeleteSocketServerCommand, x:DataType=vm:SocketServerViewModel}"
+                                                CommandParameter="{Binding Id}"
+                                                Content="删除" />-->
+                                        </StackPanel>
                                     </StackPanel>
-                                </StackPanel>
-                            </Border>
+                                </Border>
+                            </u:LoadingContainer>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

@@ -1,18 +1,27 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
 using MiniToolBoxCross.Common.Enums;
+using MiniToolBoxCross.Common.Extensions;
 using MiniToolBoxCross.Common.Global;
+using MiniToolBoxCross.Common.Helper;
 using MiniToolBoxCross.Common.Messages.SocketService;
 using MiniToolBoxCross.Models.Entities;
 using MiniToolBoxCross.Models.Repositories.Global;
+using MiniToolBoxCross.Services;
 using MiniToolBoxCross.ViewModels.Dialogs;
-using MiniToolBoxCross.ViewModels.UserControls;
 using MiniToolBoxCross.Views.Dialogs;
+using SuperSocket.Client;
+using SuperSocket.ProtoBase;
+using SuperSocket.Server.Abstractions;
 using Ursa.Controls;
 
 namespace MiniToolBoxCross.ViewModels.Pages;
@@ -22,9 +31,9 @@ public partial class SocketServerViewModel : ViewModelBase
     [ObservableProperty]
     private SocketConfigureType _serverType = SocketConfigureType.PortForwarding;
 
-    public ObservableCollection<IPAddress> IpAddressList { get; set; }
     public ObservableCollection<SocketServerModel> SocketServerModels { get; set; }
-
+    private IServer? GameSocketServer { get; set; }
+    private IEasyClient<TextPackageInfo> EasyClient { get; set; }
     private readonly CrossSystemFunc _crossSystemFunc;
     private readonly INotificationService _notificationService;
 
@@ -35,41 +44,24 @@ public partial class SocketServerViewModel : ViewModelBase
     {
         _crossSystemFunc = crossSystemFunc;
         _notificationService = notificationService;
-
-        SocketServerModels = [new SocketServerModel()];
-
+        SocketServerModels = [];
         RegisterMessage();
-    }
 
-    // private void Refresh()
-    // {
-    //     var ipAddressList = SocketHelper.GetIpAddressList(AddressFamily.InterNetworkV6);
-    //
-    //     IpAddressList = new ObservableCollection<IPAddress>(ipAddressList);
-    //
-    //     ServerIp = ipAddressList.FirstOrDefault() ?? IPAddress.None;
-    //     var validServerPort = SocketHelper.CheckPort(ServerPort);
-    //     if (validServerPort.HasValue)
-    //     {
-    //         ServerPort = validServerPort.Value;
-    //     }
-    //     else
-    //     {
-    //         _notificationService.ShowError("配置错误", "没有找到可用的网络端口");
-    //         ServerPort = 0;
-    //     }
-    //     LocalIp = IPAddress.Loopback;
-    //     var validLocalPort = SocketHelper.CheckPort(LocalPort);
-    //     if (validLocalPort.HasValue)
-    //     {
-    //         LocalPort = validLocalPort.Value;
-    //     }
-    //     else
-    //     {
-    //         _notificationService.ShowError("配置错误", "没有找到可用的网络端口");
-    //         LocalPort = 0;
-    //     }
-    // }
+        EasyClient = new EasyClient<TextPackageInfo>(
+            new TransparentPipelineFilter<TextPackageInfo>()
+        );
+
+        Console.WriteLine(SocketHelper.GetIpv4AddressList().First());
+        EasyClient.PackageHandler += (sender, package) =>
+        {
+            Console.WriteLine(package.Text);
+            return new ValueTask();
+        };
+        EasyClient.ConnectAsync(new IPEndPoint(SocketHelper.GetIpv4AddressList().First(), 7689));
+        Console.WriteLine(SocketHelper.GetIpv4AddressList().First());
+
+        EasyClient.StartReceive();
+    }
 
     private void RegisterMessage()
     {
@@ -78,8 +70,74 @@ public partial class SocketServerViewModel : ViewModelBase
             (_, message) =>
             {
                 var value = message.Value;
+                SocketServerModels.Add(
+                    new SocketServerModel(
+                        Guid.NewGuid(),
+                        value.Name,
+                        new IPEndPoint(value.ServerIpAddress, value.ServerPort),
+                        new IPEndPoint(value.LocalIpAddress, value.LocalPort)
+                    )
+                );
             }
         );
+    }
+
+    private async Task<IServer> BuildGameSocketServer(
+        IServer? gameSocketServer,
+        IPAddress serverIpAddress,
+        int serverPort,
+        IPAddress localIpAddress,
+        int localPort
+    )
+    {
+        if (gameSocketServer is not null)
+        {
+            await gameSocketServer.StopAsync();
+            gameSocketServer.Dispose();
+        }
+
+        return SuperSocketBuildHelper.BuildGameSuperSocket(
+            [
+                new ListenOptions { Ip = serverIpAddress.ToString(), Port = serverPort },
+                new ListenOptions { Ip = localIpAddress.ToString(), Port = localPort },
+            ],
+            false
+        );
+    }
+
+    private bool CheckServerModelConfig(SocketServerModel model)
+    {
+        var serverIpEndPort = model.ServerIpEndPoint;
+        if (!SocketHelper.GetIpv6AddressList().Contains(serverIpEndPort.Address))
+        {
+            _notificationService.ShowError("配置错误", "请刷新服务器地址");
+            return false;
+        }
+
+        var localIpEndPort = model.LocalIpEndPoint;
+        if (!SocketHelper.GetIpv4AddressList().Contains(localIpEndPort.Address))
+        {
+            _notificationService.ShowError("配置错误", "请刷新本地地址");
+            return false;
+        }
+
+        if (serverIpEndPort.Port == localIpEndPort.Port)
+        {
+            _notificationService.ShowError("配置错误", "请选择不同的端口");
+            return false;
+        }
+
+        var validServerPort = SocketHelper.CheckPort(serverIpEndPort.Port);
+        var validLocalPort = SocketHelper.CheckPort(localIpEndPort.Port);
+        if (!validServerPort.HasValue || !validLocalPort.HasValue)
+        {
+            _notificationService.ShowError("配置错误", "没有找到可用的网络端口");
+            return false;
+        }
+
+        model.ServerIpEndPoint = new IPEndPoint(serverIpEndPort.Address, validServerPort.Value);
+        model.LocalIpEndPoint = new IPEndPoint(localIpEndPort.Address, validLocalPort.Value);
+        return true;
     }
 
     [RelayCommand]
@@ -101,93 +159,122 @@ public partial class SocketServerViewModel : ViewModelBase
         >(new SocketServerConfigureDialogViewModel(ServerType), options: options);
     }
 
-    // [RelayCommand(CanExecute = nameof(CanStartServer))]
-    // private async Task StartServer()
-    // {
-    //     if (IsRunning || IsBusy)
-    //         return;
-    //
-    //     var ipAddress = SocketHelper.GetIpAddressList(AddressFamily.InterNetworkV6);
-    //     if (!ipAddress.Contains(IpAddress))
-    //     {
-    //         _notificationService.ShowError("验证失败", "请选择有效的 IP 地址");
-    //         return;
-    //     }
-    //
-    //     IsBusy = true;
-    //     try
-    //     {
-    //         _server = await InitSocket(IpAddress, Port);
-    //         await _server.StartAsync();
-    //         IsRunning = true;
-    //
-    //         _notificationService.ShowSuccess("服务器启动", $"已成功启动，监听 {IpAddress}:{Port}");
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         _notificationService.ShowError("启动失败", $"无法启动服务器：{ex.Message}");
-    //     }
-    //     finally
-    //     {
-    //         IsBusy = false;
-    //     }
-    // }
-    //
-    // private bool CanStopServer() => IsRunning && !IsBusy;
-    //
-    // [RelayCommand(CanExecute = nameof(CanStopServer))]
-    // private async Task StopServer()
-    // {
-    //     if (!IsRunning || IsBusy || _server is null)
-    //         return;
-    //
-    //     IsBusy = true;
-    //     try
-    //     {
-    //         await _server.StopAsync();
-    //         _server.Dispose();
-    //         _server = null;
-    //         IsRunning = false;
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         _notificationService.ShowError("停止服务器失败", $"无法停止服务器：{ex.Message}");
-    //     }
-    //     finally
-    //     {
-    //         IsBusy = false;
-    //     }
-    // }
-    //
-    // private bool CanRestartServer() => IsRunning && !IsBusy;
-    //
-    // [RelayCommand(CanExecute = nameof(CanRestartServer))]
-    // private async Task RestartServer()
-    // {
-    //     if (!IsRunning || IsBusy || _server is null)
-    //         return;
-    //     IsBusy = true;
-    //     try
-    //     {
-    //         _server = await InitSocket(IpAddress, Port);
-    //         await _server.StartAsync();
-    //         IsRunning = true;
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         _notificationService.ShowError("重启服务器失败", $"无法重启服务器：{ex.Message}");
-    //     }
-    //     finally
-    //     {
-    //         IsBusy = false;
-    //     }
-    // }
-    //
     [RelayCommand]
-    private async Task CopyIp(SocketServerModel? model)
+    private async Task StartPortForwardingServer()
     {
-        await _crossSystemFunc.SetClipboardText(
-            new IPEndPoint(model.IpAddress, model.Port).ToString()
-        );
+        var model = SocketServerModels.FirstOrDefault();
+        if (model is null || model.IsRunning || model.IsBusy)
+            return;
+        if (!CheckServerModelConfig(model))
+            return;
+
+        model.IsBusy = true;
+        try
+        {
+            GameSocketServer = await BuildGameSocketServer(
+                GameSocketServer,
+                model.ServerIpEndPoint.Address,
+                model.ServerIpEndPoint.Port,
+                model.LocalIpEndPoint.Address,
+                model.LocalIpEndPoint.Port
+            );
+            await GameSocketServer.StartAsync();
+            model.IsRunning = true;
+            _notificationService.ShowSuccess(
+                "服务器启动",
+                $"[{model.Name}]已成功启动，监听 {model.ServerIpEndPoint.Address}:{model.ServerIpEndPoint.Port}"
+            );
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError(
+                "启动失败",
+                $"[{model.Name}]无法启动服务器：{ex.Message}"
+            );
+        }
+        finally
+        {
+            model.IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task StopPortForwardingServer()
+    {
+        var model = SocketServerModels.FirstOrDefault();
+        if (model is null || !model.IsRunning || model.IsBusy)
+            return;
+        if (GameSocketServer is null)
+            return;
+
+        model.IsBusy = true;
+        try
+        {
+            await GameSocketServer.StopAsync();
+            GameSocketServer.Dispose();
+            model.IsRunning = false;
+            _notificationService.ShowSuccess("服务器停止", $"[{model.Name}]已成功停止");
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError(
+                "停止失败",
+                $"[{model.Name}]无法停止服务器：{ex.Message}"
+            );
+        }
+        finally
+        {
+            model.IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task RestartPortForwardingServer()
+    {
+        var model = SocketServerModels.FirstOrDefault();
+        if (model is null || model.IsBusy)
+            return;
+        if (GameSocketServer is null)
+            return;
+        if (!CheckServerModelConfig(model))
+            return;
+
+        model.IsBusy = true;
+        try
+        {
+            GameSocketServer = await BuildGameSocketServer(
+                GameSocketServer,
+                model.ServerIpEndPoint.Address,
+                model.ServerIpEndPoint.Port,
+                model.LocalIpEndPoint.Address,
+                model.LocalIpEndPoint.Port
+            );
+            model.IsRunning = true;
+            _notificationService.ShowSuccess(
+                "服务器启动",
+                $"[{model.Name}]已成功启动，监听 {model.ServerIpEndPoint.Address}:{model.ServerIpEndPoint.Port}"
+            );
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError(
+                "启动失败",
+                $"[{model.Name}]无法启动服务器：{ex.Message}"
+            );
+        }
+        finally
+        {
+            model.IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task CopyIp(Guid? socketServerId)
+    {
+        var model = SocketServerModels.FirstOrDefault(x => x.Id == socketServerId);
+        if (model is null)
+            return;
+        await _crossSystemFunc.SetClipboardText(model.ServerIpEndPoint.ToString());
+        _notificationService.ShowSuccess("复制成功", $"已复制 {model.ServerIpEndPoint} 到剪贴板");
     }
 }

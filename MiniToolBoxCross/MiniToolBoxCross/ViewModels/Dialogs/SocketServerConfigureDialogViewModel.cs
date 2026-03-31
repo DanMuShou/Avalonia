@@ -40,7 +40,7 @@ public partial class SocketServerConfigureDialogViewModel : ViewModelBase, IDial
     public SocketServerConfigureDialogViewModel(SocketConfigureType serverConfigureType)
     {
         ServerType = serverConfigureType;
-        _title = serverConfigureType switch
+        Title = serverConfigureType switch
         {
             SocketConfigureType.PortForwarding => "端口转发",
             SocketConfigureType.Communication => "通信",
@@ -66,11 +66,7 @@ public partial class SocketServerConfigureDialogViewModel : ViewModelBase, IDial
     {
         WeakReferenceMessenger.Default.Send(
             new ValueChangedMessage<SocketServiceConfigureMessage>(
-                new SocketServiceConfigureMessage(
-                    ServerType,
-                    new IPEndPoint(ServerIp, ServerPort),
-                    new IPEndPoint(LocalIp, LocalPort)
-                )
+                new SocketServiceConfigureMessage("1", ServerIp, ServerPort, LocalIp, LocalPort)
             )
         );
         RequestClose?.Invoke(this, true);

@@ -1,57 +1,62 @@
 ﻿using System;
 using System.Net;
-using System.Net.Sockets;
-using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using MiniToolBoxCross.Common.Extensions;
-using MiniToolBoxCross.Common.Global;
-using MiniToolBoxCross.Common.Helper;
-using MiniToolBoxCross.Models.Repositories.Global;
-using MiniToolBoxCross.ViewModels;
-using SuperSocket.Server.Abstractions;
+using MiniToolBoxCross.Common.Enums;
 
 namespace MiniToolBoxCross.Models.Entities;
 
 public partial class SocketServerModel : ModelBase
 {
     [ObservableProperty]
-    private string _title;
+    private string _name;
 
     [ObservableProperty]
-    private IPAddress _ipAddress;
+    private string _serverNetInfo = string.Empty;
 
     [ObservableProperty]
-    private int _port;
+    private string _localNetInfo = string.Empty;
 
     [ObservableProperty]
-    // [NotifyCanExecuteChangedFor(nameof(StartServerCommand))]
-    // [NotifyCanExecuteChangedFor(nameof(StopServerCommand))]
-    // [NotifyCanExecuteChangedFor(nameof(RestartServerCommand))]
-    private bool _isRunning;
+    private Guid _id;
 
     [ObservableProperty]
-    // [NotifyCanExecuteChangedFor(nameof(StartServerCommand))]
-    // [NotifyCanExecuteChangedFor(nameof(StopServerCommand))]
-    // [NotifyCanExecuteChangedFor(nameof(RestartServerCommand))]
     private bool _isBusy;
 
-    private bool CanStartServer() => !IsRunning && !IsBusy;
+    [ObservableProperty]
+    private bool _isRunning;
 
-    private IServer? _server;
+    public SocketConfigureType ConfigureType { get; set; } = SocketConfigureType.Communication;
 
-    private async Task<IServer> InitSocket(IPAddress ipAddress, int port)
+    public IPEndPoint ServerIpEndPoint
     {
-        if (_server is null)
-            return SuperSocketExtensions.CreateSuperSocket(
-                [new ListenOptions { Ip = ipAddress.ToString(), Port = port }]
-            );
+        get;
+        set
+        {
+            field = value;
+            ServerNetInfo = value.ToString();
+        }
+    }
 
-        await _server.StopAsync();
-        _server.Dispose();
-        _server = null;
-        return SuperSocketExtensions.CreateSuperSocket(
-            [new ListenOptions { Ip = ipAddress.ToString(), Port = port }]
-        );
+    public IPEndPoint LocalIpEndPoint
+    {
+        get;
+        set
+        {
+            field = value;
+            LocalNetInfo = value.ToString();
+        }
+    }
+
+    public SocketServerModel(
+        Guid id,
+        string name,
+        IPEndPoint serverIpEndPoint,
+        IPEndPoint localIpEndPoint
+    )
+    {
+        Id = id;
+        ServerIpEndPoint = serverIpEndPoint;
+        LocalIpEndPoint = localIpEndPoint;
+        Name = name;
     }
 }
