@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
 using MiniToolBoxCross.Common.Enums;
-using MiniToolBoxCross.Common.Extensions;
 using MiniToolBoxCross.Common.Global;
 using MiniToolBoxCross.Common.Helper;
 using MiniToolBoxCross.Common.Messages.SocketService;
@@ -19,8 +18,6 @@ using MiniToolBoxCross.Models.Repositories.Global;
 using MiniToolBoxCross.Services;
 using MiniToolBoxCross.ViewModels.Dialogs;
 using MiniToolBoxCross.Views.Dialogs;
-using SuperSocket.Client;
-using SuperSocket.ProtoBase;
 using SuperSocket.Server.Abstractions;
 using Ursa.Controls;
 
@@ -31,9 +28,22 @@ public partial class SocketServerViewModel : ViewModelBase
     [ObservableProperty]
     private SocketConfigureType _serverType = SocketConfigureType.PortForwarding;
 
-    public ObservableCollection<SocketServerModel> SocketServerModels { get; set; }
-    private IServer? GameSocketServer { get; set; }
-    private IEasyClient<TextPackageInfo> EasyClient { get; set; }
+    [ObservableProperty]
+    private bool _isBusy;
+
+    [ObservableProperty]
+    private bool _isRunning;
+
+    [ObservableProperty]
+    private IPAddress _serverIpAddress;
+
+    [ObservableProperty]
+    private int _serverPort;
+
+    public ObservableCollection<ListenerModel> ListenerModels { get; set; }
+    public ObservableCollection<LocalSocketModel> LocalSocketModels { get; set; }
+    private IServer? ServerSocket { get; set; }
+    private Dictionary<Guid, EchoClient> EchoClients { get; set; }
     private readonly CrossSystemFunc _crossSystemFunc;
     private readonly INotificationService _notificationService;
 
@@ -44,23 +54,10 @@ public partial class SocketServerViewModel : ViewModelBase
     {
         _crossSystemFunc = crossSystemFunc;
         _notificationService = notificationService;
-        SocketServerModels = [];
+        ListenerModels = [];
+        LocalSocketModels = [];
+        EchoClients = [];
         RegisterMessage();
-
-        EasyClient = new EasyClient<TextPackageInfo>(
-            new TransparentPipelineFilter<TextPackageInfo>()
-        );
-
-        Console.WriteLine(SocketHelper.GetIpv4AddressList().First());
-        EasyClient.PackageHandler += (sender, package) =>
-        {
-            Console.WriteLine(package.Text);
-            return new ValueTask();
-        };
-        EasyClient.ConnectAsync(new IPEndPoint(SocketHelper.GetIpv4AddressList().First(), 7689));
-        Console.WriteLine(SocketHelper.GetIpv4AddressList().First());
-
-        EasyClient.StartReceive();
     }
 
     private void RegisterMessage()
@@ -70,11 +67,18 @@ public partial class SocketServerViewModel : ViewModelBase
             (_, message) =>
             {
                 var value = message.Value;
-                SocketServerModels.Add(
-                    new SocketServerModel(
+                ListenerModels.Add(
+                    new ListenerModel(
                         Guid.NewGuid(),
                         value.Name,
-                        new IPEndPoint(value.ServerIpAddress, value.ServerPort),
+                        new IPEndPoint(value.ServerIpAddress, value.ServerPort)
+                    )
+                );
+                LocalSocketModels.Add(
+                    new LocalSocketModel(
+                        Guid.NewGuid(),
+                        value.Name,
+                        "",
                         new IPEndPoint(value.LocalIpAddress, value.LocalPort)
                     )
                 );
@@ -82,62 +86,188 @@ public partial class SocketServerViewModel : ViewModelBase
         );
     }
 
-    private async Task<IServer> BuildGameSocketServer(
-        IServer? gameSocketServer,
-        IPAddress serverIpAddress,
-        int serverPort,
-        IPAddress localIpAddress,
-        int localPort
-    )
+    private bool CheckSocketConfig()
     {
-        if (gameSocketServer is not null)
+        foreach (var listenerModel in ListenerModels)
         {
-            await gameSocketServer.StopAsync();
-            gameSocketServer.Dispose();
+            var listenerIpEndPort = listenerModel.ListenerNetIpEndPoint;
+            if (!SocketHelper.GetIpv6AddressList().Contains(listenerIpEndPort.Address))
+            {
+                _notificationService.ShowError(
+                    "配置错误",
+                    $"{listenerModel.Name} 请刷新服务器地址"
+                );
+                return false;
+            }
+
+            var validServerPort = SocketHelper.CheckPort(listenerIpEndPort.Port);
+            if (!validServerPort.HasValue)
+            {
+                _notificationService.ShowError(
+                    "配置错误",
+                    $"{listenerModel.Name} 没有找到可用的网络端口"
+                );
+                return false;
+            }
+            listenerModel.ListenerNetIpEndPoint = new IPEndPoint(
+                listenerIpEndPort.Address,
+                validServerPort.Value
+            );
         }
 
-        return SuperSocketBuildHelper.BuildGameSuperSocket(
-            [
-                new ListenOptions { Ip = serverIpAddress.ToString(), Port = serverPort },
-                new ListenOptions { Ip = localIpAddress.ToString(), Port = localPort },
-            ],
-            false
-        );
+        foreach (var localModel in LocalSocketModels)
+        {
+            var localIpEndPort = localModel.LocalIpEndPoint;
+            if (!SocketHelper.GetIpv4AddressList().Contains(localIpEndPort.Address))
+            {
+                _notificationService.ShowError("配置错误", $"{localModel.Name} 请刷新本地地址");
+                return false;
+            }
+
+            var validLocalPort = SocketHelper.CheckPort(localIpEndPort.Port);
+            if (!validLocalPort.HasValue)
+            {
+                _notificationService.ShowError(
+                    "配置错误",
+                    $"{localModel.Name} 没有找到可用的本地端口"
+                );
+                return false;
+            }
+            localModel.LocalIpEndPoint = new IPEndPoint(
+                localIpEndPort.Address,
+                validLocalPort.Value
+            );
+        }
+        return true;
     }
 
-    private bool CheckServerModelConfig(SocketServerModel model)
+    private EchoClient BuildEchoClient(IPEndPoint endPoint, EchoClient? oldClient)
     {
-        var serverIpEndPort = model.ServerIpEndPoint;
-        if (!SocketHelper.GetIpv6AddressList().Contains(serverIpEndPort.Address))
+        if (oldClient is not null)
         {
-            _notificationService.ShowError("配置错误", "请刷新服务器地址");
-            return false;
+            oldClient.Disconnect();
+            oldClient.Dispose();
         }
 
-        var localIpEndPort = model.LocalIpEndPoint;
-        if (!SocketHelper.GetIpv4AddressList().Contains(localIpEndPort.Address))
-        {
-            _notificationService.ShowError("配置错误", "请刷新本地地址");
-            return false;
-        }
+        return new EchoClient(endPoint);
+    }
 
-        if (serverIpEndPort.Port == localIpEndPort.Port)
-        {
-            _notificationService.ShowError("配置错误", "请选择不同的端口");
-            return false;
-        }
+    [RelayCommand]
+    private async Task Start()
+    {
+        if (IsRunning || IsBusy)
+            return;
 
-        var validServerPort = SocketHelper.CheckPort(serverIpEndPort.Port);
-        var validLocalPort = SocketHelper.CheckPort(localIpEndPort.Port);
-        if (!validServerPort.HasValue || !validLocalPort.HasValue)
-        {
-            _notificationService.ShowError("配置错误", "没有找到可用的网络端口");
-            return false;
-        }
+        if (!CheckSocketConfig())
+            return;
 
-        model.ServerIpEndPoint = new IPEndPoint(serverIpEndPort.Address, validServerPort.Value);
-        model.LocalIpEndPoint = new IPEndPoint(localIpEndPort.Address, validLocalPort.Value);
-        return true;
+        await RebuildSocket();
+
+        IsBusy = true;
+        try
+        {
+            await ServerSocket!.StartAsync();
+            EchoClients
+                .Values.ToList()
+                .ForEach(client =>
+                {
+                    client.Connected += (sender, args) =>
+                    {
+                        client.Send("Hello World");
+                        Console.WriteLine($"已连接至 {client.Endpoint}");
+                    };
+                    client.Disconnected += (sender, args) =>
+                    {
+                        Console.WriteLine($"已断开连接 {client.Endpoint}");
+                    };
+                    client.DataReceived += (sender, args) =>
+                    {
+                        var message = Encoding.UTF8.GetString(
+                            args.buffer,
+                            (int)args.offset,
+                            (int)args.size
+                        );
+                        Console.WriteLine($"收到消息：{message}");
+                    };
+                    client.ErrorOccurred += (sender, args) =>
+                    {
+                        Console.WriteLine($"{client.Endpoint} 发生错误");
+                    };
+                    client.Connect();
+                });
+            IsRunning = true;
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError("启动失败", ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task Stop()
+    {
+        if (!IsRunning || IsBusy || ServerSocket is null)
+            return;
+
+        IsBusy = true;
+        try
+        {
+            await ServerSocket.StopAsync();
+            EchoClients
+                .Values.ToList()
+                .ForEach(client =>
+                {
+                    client.Disconnect();
+                    client.Dispose();
+                });
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError("停止失败", ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task Restart()
+    {
+        if (!IsRunning || IsBusy)
+            return;
+        if (ServerSocket is null)
+            return;
+        if (!CheckSocketConfig())
+            return;
+
+        await RebuildSocket();
+
+        IsBusy = true;
+        try
+        {
+            await ServerSocket.StartAsync();
+            EchoClients
+                .Values.ToList()
+                .ForEach(client =>
+                {
+                    client.Connect();
+                    client.ReceiveAsync();
+                });
+            IsRunning = true;
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ShowError("重启失败", ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]
@@ -160,121 +290,43 @@ public partial class SocketServerViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task StartPortForwardingServer()
-    {
-        var model = SocketServerModels.FirstOrDefault();
-        if (model is null || model.IsRunning || model.IsBusy)
-            return;
-        if (!CheckServerModelConfig(model))
-            return;
-
-        model.IsBusy = true;
-        try
-        {
-            GameSocketServer = await BuildGameSocketServer(
-                GameSocketServer,
-                model.ServerIpEndPoint.Address,
-                model.ServerIpEndPoint.Port,
-                model.LocalIpEndPoint.Address,
-                model.LocalIpEndPoint.Port
-            );
-            await GameSocketServer.StartAsync();
-            model.IsRunning = true;
-            _notificationService.ShowSuccess(
-                "服务器启动",
-                $"[{model.Name}]已成功启动，监听 {model.ServerIpEndPoint.Address}:{model.ServerIpEndPoint.Port}"
-            );
-        }
-        catch (Exception ex)
-        {
-            _notificationService.ShowError(
-                "启动失败",
-                $"[{model.Name}]无法启动服务器：{ex.Message}"
-            );
-        }
-        finally
-        {
-            model.IsBusy = false;
-        }
-    }
-
-    [RelayCommand]
-    private async Task StopPortForwardingServer()
-    {
-        var model = SocketServerModels.FirstOrDefault();
-        if (model is null || !model.IsRunning || model.IsBusy)
-            return;
-        if (GameSocketServer is null)
-            return;
-
-        model.IsBusy = true;
-        try
-        {
-            await GameSocketServer.StopAsync();
-            GameSocketServer.Dispose();
-            model.IsRunning = false;
-            _notificationService.ShowSuccess("服务器停止", $"[{model.Name}]已成功停止");
-        }
-        catch (Exception ex)
-        {
-            _notificationService.ShowError(
-                "停止失败",
-                $"[{model.Name}]无法停止服务器：{ex.Message}"
-            );
-        }
-        finally
-        {
-            model.IsBusy = false;
-        }
-    }
-
-    [RelayCommand]
-    private async Task RestartPortForwardingServer()
-    {
-        var model = SocketServerModels.FirstOrDefault();
-        if (model is null || model.IsBusy)
-            return;
-        if (GameSocketServer is null)
-            return;
-        if (!CheckServerModelConfig(model))
-            return;
-
-        model.IsBusy = true;
-        try
-        {
-            GameSocketServer = await BuildGameSocketServer(
-                GameSocketServer,
-                model.ServerIpEndPoint.Address,
-                model.ServerIpEndPoint.Port,
-                model.LocalIpEndPoint.Address,
-                model.LocalIpEndPoint.Port
-            );
-            model.IsRunning = true;
-            _notificationService.ShowSuccess(
-                "服务器启动",
-                $"[{model.Name}]已成功启动，监听 {model.ServerIpEndPoint.Address}:{model.ServerIpEndPoint.Port}"
-            );
-        }
-        catch (Exception ex)
-        {
-            _notificationService.ShowError(
-                "启动失败",
-                $"[{model.Name}]无法启动服务器：{ex.Message}"
-            );
-        }
-        finally
-        {
-            model.IsBusy = false;
-        }
-    }
-
-    [RelayCommand]
     private async Task CopyIp(Guid? socketServerId)
     {
-        var model = SocketServerModels.FirstOrDefault(x => x.Id == socketServerId);
+        var model = ListenerModels.FirstOrDefault(x => x.Id == socketServerId);
         if (model is null)
             return;
-        await _crossSystemFunc.SetClipboardText(model.ServerIpEndPoint.ToString());
-        _notificationService.ShowSuccess("复制成功", $"已复制 {model.ServerIpEndPoint} 到剪贴板");
+        await _crossSystemFunc.SetClipboardText(model.ListenerNetIpEndPoint.ToString());
+        _notificationService.ShowSuccess(
+            "复制成功",
+            $"已复制 {model.ListenerNetIpEndPoint} 到剪贴板"
+        );
+    }
+
+    private async Task RebuildSocket()
+    {
+        ServerSocket = await SocketHelper.BuildSocketServer(
+            GetListenOptionsFromModel(),
+            ServerSocket
+        );
+
+        foreach (var localModel in LocalSocketModels)
+        {
+            EchoClients.TryGetValue(localModel.Id, out var echoClient);
+            var textIp = IPEndPoint.Parse("127.0.0.1:3333");
+            echoClient = BuildEchoClient(textIp, echoClient);
+            EchoClients[localModel.Id] = echoClient;
+        }
+    }
+
+    private List<ListenOptions> GetListenOptionsFromModel()
+    {
+        return
+        [
+            .. ListenerModels.Select(x => new ListenOptions()
+            {
+                Ip = x.ListenerNetIpEndPoint.Address.ToString(),
+                Port = x.ListenerNetIpEndPoint.Port,
+            }),
+        ];
     }
 }

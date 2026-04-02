@@ -4,11 +4,27 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using MiniToolBoxCross.Common.Global;
+using MiniToolBoxCross.Services;
+using MiniToolBoxCross.Services.Commands;
+using Serilog;
+using SuperSocket.Command;
+using SuperSocket.ProtoBase;
+using SuperSocket.Server;
+using SuperSocket.Server.Abstractions;
+using SuperSocket.Server.Host;
 
 namespace MiniToolBoxCross.Common.Helper;
 
 public static class SocketHelper
 {
+    #region IPADDRESS
+
+
     private const int MinPort = 1024;
     private const int MaxPort = 65535;
 
@@ -105,4 +121,68 @@ public static class SocketHelper
 
         return [.. usedPorts];
     }
+    #endregion
+
+    #region SUPERSOCKET
+
+    private static IHostBuilder GetSuperSocketBuild(
+        List<ListenOptions> listenOptionsList,
+        bool useUdp
+    )
+    {
+        var socketHostBuilder = SuperSocketHostBuilder
+            .Create<StringPackageInfo, TransparentPipelineFilter<StringPackageInfo>>()
+            .UseHostedService<SocketService<StringPackageInfo>>()
+            .UseSession<SocketSession>()
+            .UseInProcSessionContainer()
+            .UseCommand(
+                (commandOptions) =>
+                {
+                    commandOptions.AddCommand<LoginCommand>();
+                }
+            )
+            .ConfigureSuperSocket(options =>
+                listenOptionsList.ForEach(o => options.AddListener(o))
+            );
+
+        if (useUdp)
+        {
+            socketHostBuilder.UseUdp();
+        }
+
+        var hostBuilder = socketHostBuilder
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<CrossSetting>();
+                services.AddLogging(builder =>
+                {
+                    builder.SetMinimumLevel(LogLevel.Debug);
+                });
+            })
+            .ConfigureLogging(
+                (_, loggingBuilder) =>
+                {
+                    loggingBuilder.ClearProviders();
+                    loggingBuilder.AddSerilog(dispose: true);
+                }
+            );
+
+        return hostBuilder;
+    }
+
+    public static async Task<IServer> BuildSocketServer(
+        List<ListenOptions> listenOptionsList,
+        IServer? oldSocketServer
+    )
+    {
+        if (oldSocketServer is not null)
+        {
+            await oldSocketServer.StopAsync();
+            oldSocketServer.Dispose();
+        }
+
+        return GetSuperSocketBuild([.. listenOptionsList], false).BuildAsServer();
+    }
+
+    #endregion
 }
