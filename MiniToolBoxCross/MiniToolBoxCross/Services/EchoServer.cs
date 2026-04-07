@@ -2,32 +2,32 @@
 using System.Net;
 using System.Net.Sockets;
 using MiniToolBoxCross.Common.Enums;
-using UdpClient = MiniToolBoxCross.Services.NetCoreServer.UdpClient;
+using MiniToolBoxCross.Services.NetCoreServer;
 
 namespace MiniToolBoxCross.Services;
 
-public class EchoClient : UdpClient
+public class EchoServer(IPEndPoint endPoint, string key, ForwardTargetType forwardTargetType)
+    : UdpServer(endPoint)
 {
+    public event Action? Started;
     public event Action<byte[], long, long>? DataReceived;
     public event Action<SocketError>? ErrorOccurred;
+    public string ForwardTargetType { get; } = ((int)forwardTargetType).ToString();
+    public string Key { get; } = key;
 
-    public string ForwardTargetType { get; }
+    public EndPoint? LastClientEndpoint { get; private set; }
 
-    public EchoClient(IPEndPoint endPoint, ForwardTargetType forwardTargetType)
-        : base(endPoint)
+    protected override void OnStarted()
     {
-        ForwardTargetType = ((int)forwardTargetType).ToString();
-    }
-
-    protected override void OnConnected()
-    {
-        base.OnConnected();
+        base.OnStarted();
+        Started?.Invoke();
         ReceiveAsync();
     }
 
     protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
     {
         base.OnReceived(endpoint, buffer, offset, size);
+        LastClientEndpoint = endpoint;
         DataReceived?.Invoke(buffer, offset, size);
         ReceiveAsync();
     }

@@ -13,63 +13,98 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Theme="{DynamicResource CardBorder}">
         <ScrollViewer>
-            <Grid RowDefinitions="Auto,16,1*">
-                <StackPanel Grid.Row="0" Orientation="Horizontal">
-                    <u:EnumSelector EnumType="{Binding ServerType}" />
+            <Grid RowDefinitions="Auto,Auto,*">
+                <u:Form
+                    Grid.Row="0"
+                    HorizontalAlignment="Stretch"
+                    LabelPosition="Top">
+                    <u:Form.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Grid ColumnDefinitions="2*,1*" RowDefinitions="Auto" />
+                        </ItemsPanelTemplate>
+                    </u:Form.ItemsPanel>
+                    <u:FormItem
+                        Grid.Column="0"
+                        Grid.Row="0"
+                        Label="服务器 Ip">
+                        <ComboBox
+                            HorizontalAlignment="Stretch"
+                            ItemsSource="{Binding IpAddressList}"
+                            SelectedItem="{Binding ServerIp}" />
+                    </u:FormItem>
+
+                    <u:FormItem
+                        Grid.Column="1"
+                        Grid.Row="0"
+                        Label="服务器端口"
+                        Margin="8,8,0,0">
+                        <NumericUpDown
+                            Maximum="65535"
+                            Minimum="0"
+                            Value="{Binding ServerPort}" />
+                    </u:FormItem>
+                </u:Form>
+
+                <StackPanel
+                    Grid.Row="1"
+                    Orientation="Horizontal"
+                    Spacing="4">
                     <Button
-                        Command="{Binding OpenConfigureServerDialogCommand}"
-                        Content="添加服务器"
-                        Margin="4,0,0,0" />
+                        Classes="Tertiary"
+                        Command="{Binding CopyInfoCommand}"
+                        Content="复制" />
+                    <Button
+                        Classes="Primary"
+                        Command="{Binding StartCommand}"
+                        Content="启动" />
+                    <Button
+                        Classes="Danger"
+                        Command="{Binding StopCommand}"
+                        Content="停止" />
+                    <Button
+                        Classes="Warning"
+                        Command="{Binding RestartCommand}"
+                        Content="重启" />
                 </StackPanel>
 
-                <ItemsControl Grid.Row="2" ItemsSource="{Binding ListenerModels}">
-                    <ItemsControl.ItemsPanel>
+                <u:Form
+                    Grid.Row="2"
+                    HorizontalAlignment="Stretch"
+                    LabelPosition="Top">
+                    <u:Form.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <u:ElasticWrapPanel ItemSpacing="4" LineSpacing="4" />
+                            <Grid ColumnDefinitions="2*,1*" RowDefinitions="Auto" />
                         </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <u:LoadingContainer IsLoading="{Binding #Root.DataContext.IsBusy}" LoadingMessage="加载中...">
-                                <Border Theme="{DynamicResource CardBorder}">
-                                    <StackPanel>
-                                        <SelectableTextBlock
-                                            Classes="H6"
-                                            Text="名称"
-                                            Theme="{DynamicResource TitleSelectableTextBlock}" />
-                                        <u:Descriptions ItemAlignment="Left" Margin="0,16,0,0">
-                                            <u:DescriptionsItem Content="{Binding ListenerNetInfo}" Label="服务器: " />
-                                        </u:Descriptions>
-                                        <StackPanel
-                                            HorizontalAlignment="Right"
-                                            Orientation="Horizontal"
-                                            Spacing="4">
-                                            <Button
-                                                Classes="Tertiary"
-                                                Command="{Binding #Root.DataContext.CopyIpCommand, x:DataType=vm:SocketServerViewModel}"
-                                                Content="复制" />
-                                            <Button Command="{Binding #Root.DataContext.StartCommand, x:DataType=vm:SocketServerViewModel}" Content="启动" />
-                                            <Button
-                                                Classes="Danger"
-                                                Command="{Binding #Root.DataContext.StopCommand, x:DataType=vm:SocketServerViewModel}"
-                                                Content="停止" />
-                                            <Button
-                                                Classes="Warning"
-                                                Command="{Binding #Root.DataContext.RestartCommand, x:DataType=vm:SocketServerViewModel}"
-                                                CommandParameter="{Binding Id}"
-                                                Content="重启" />
-                                            <!-- <Button
-                                                Classes="Danger"
-                                                Command="{Binding #Root.DataContext.DeleteSocketServerCommand, x:DataType=vm:SocketServerViewModel}"
-                                                CommandParameter="{Binding Id}"
-                                                Content="删除" />-->
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-                            </u:LoadingContainer>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                    </u:Form.ItemsPanel>
+                    <u:FormItem Label="转发器">
+                        <u:SelectionList ItemsSource="{Binding ForwardModels}" SelectedItem="{Binding SelectedForward}">
+                            <u:SelectionList.ItemTemplate>
+                                <DataTemplate>
+                                    <u:Descriptions ItemAlignment="Left" Margin="0,16,0,0">
+                                        <u:DescriptionsItem Content="{Binding ForwardNetInfo}" Label="监听: " />
+                                    </u:Descriptions>
+                                </DataTemplate>
+                            </u:SelectionList.ItemTemplate>
+                        </u:SelectionList>
+                    </u:FormItem>
+                    <u:FormItem
+                        Grid.Column="1"
+                        Grid.Row="0"
+                        Margin="8,8,0,0">
+                        <StackPanel HorizontalAlignment="Stretch" Spacing="4">
+                            <Button
+                                Classes="Primary"
+                                Command="{Binding OpenForwardConfigureDialogCommand}"
+                                Content="添加"
+                                HorizontalAlignment="Stretch" />
+                            <Button
+                                Classes="Danger"
+                                Command="{Binding RemoveSelectedForwardModelCommand}"
+                                Content="删除"
+                                HorizontalAlignment="Stretch" />
+                        </StackPanel>
+                    </u:FormItem>
+                </u:Form>
             </Grid>
         </ScrollViewer>
     </Border>

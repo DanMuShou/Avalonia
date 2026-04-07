@@ -41,7 +41,7 @@ public class CrossSystemFunc
             : new Ursa.Controls.WindowNotificationManager(TopLevel);
     }
 
-    public async Task<string> GetClipboardText()
+    public async Task<string> GetClipboardTextAsync()
     {
         if (TopLevel?.Clipboard is null)
             return "";

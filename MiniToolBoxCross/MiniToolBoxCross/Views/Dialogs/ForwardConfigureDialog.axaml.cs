@@ -2,9 +2,9 @@
 
 namespace MiniToolBoxCross.Views.Dialogs;
 
-public partial class SocketServerConfigureDialog : UserControl
+public partial class ForwardConfigureDialog : UserControl
 {
-    public SocketServerConfigureDialog()
+    public ForwardConfigureDialog()
     {
         InitializeComponent();
     }

@@ -30,7 +30,6 @@
     <PackageReference Include="SuperSocket.Udp" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Models\Repositories\Api\" />
     <Folder Include="Resources\Styles\" />
   </ItemGroup>
 </Project>

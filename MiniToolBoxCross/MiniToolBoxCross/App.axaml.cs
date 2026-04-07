@@ -10,6 +10,8 @@ using MiniToolBoxCross.Common.Extensions;
 using MiniToolBoxCross.Common.Global;
 using MiniToolBoxCross.ViewModels;
 using MiniToolBoxCross.Views;
+using SuperSocket.ProtoBase;
+using SuperSocket.Server.Host;
 
 namespace MiniToolBoxCross;
 
@@ -28,6 +30,7 @@ public partial class App : Application
                     services.AddServices();
                 }
             )
+            .AsSuperSocketHostBuilder<StringPackageInfo>()
             .Build();
     }
 
@@ -41,8 +44,6 @@ public partial class App : Application
         switch (ApplicationLifetime)
         {
             case IClassicDesktopStyleApplicationLifetime desktop:
-                // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
-                // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
                 DisableAvaloniaDataAnnotationValidation();
                 desktop.MainWindow = new MainWindow()
                 {

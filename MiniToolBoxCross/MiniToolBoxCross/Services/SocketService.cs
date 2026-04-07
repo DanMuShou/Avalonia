@@ -1,8 +1,11 @@
 using System;
-using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MiniToolBoxCross.Common.Helper;
 using SuperSocket;
 using SuperSocket.Connection;
 using SuperSocket.Server;
@@ -11,49 +14,34 @@ using SuperSocket.Server.Abstractions.Session;
 
 namespace MiniToolBoxCross.Services;
 
-public class SocketService<TStringPackageInfo>
-    : SuperSocketService<TStringPackageInfo>,
-        ISocketService
+public class SocketService<TStringPackageInfo>(
+    IServiceProvider serviceProvider,
+    IOptions<ServerOptions> serverOptions,
+    ILogger<SocketService<TStringPackageInfo>> logger
+) : SuperSocketService<TStringPackageInfo>(serviceProvider, serverOptions), ISocketService
 {
-    private readonly ILogger<SocketService<TStringPackageInfo>> _logger;
-
-    /// <summary>
-    /// 未认证的 Session 字典
-    /// </summary>
-    private readonly ConcurrentDictionary<string, IAppSession> _unauthenticatedSessions = new();
-
-    /// <summary>
-    /// 已认证的 Session 字典
-    /// </summary>
-    private readonly ConcurrentDictionary<string, IAppSession> _authenticatedSessions = new();
-
-    public SocketService(
-        IServiceProvider serviceProvider,
-        IOptions<ServerOptions> serverOptions,
-        ILogger<SocketService<TStringPackageInfo>> logger
-    )
-        : base(serviceProvider, serverOptions)
-    {
-        _logger = logger;
-    }
+    private readonly HashSet<IAppSession> _session = [];
+    private readonly Lock _sessionLock = new();
 
     protected override async ValueTask OnSessionConnectedAsync(IAppSession session)
     {
-        _unauthenticatedSessions.TryAdd(session.SessionID, session);
+        lock (_sessionLock)
+            _session.Add(session);
+
+        logger.LogInformation("已连接 [SessionID: {SessionID}]", session.SessionID);
         await base.OnSessionConnectedAsync(session);
     }
 
     protected override async ValueTask OnSessionClosedAsync(IAppSession session, CloseEventArgs e)
     {
-        if (session is SocketSession { IsAuthenticated: true })
-        {
-            _authenticatedSessions.TryRemove(session.SessionID, out _);
-        }
-        else
-        {
-            _unauthenticatedSessions.TryRemove(session.SessionID, out _);
-        }
+        lock (_sessionLock)
+            _session.Remove(session);
 
+        logger.LogInformation(
+            "会话已关闭 [SessionID: {SessionID} Reason: {Reason}]",
+            session.SessionID,
+            e.Reason
+        );
         await base.OnSessionClosedAsync(session, e);
     }
 
@@ -70,7 +58,7 @@ public class SocketService<TStringPackageInfo>
         PackageHandlingException<TStringPackageInfo> exception
     )
     {
-        _logger.LogError(
+        logger.LogError(
             exception,
             "会话错误 [SessionID: {SessionID} Error: {Error}]",
             session.SessionID,
@@ -81,84 +69,47 @@ public class SocketService<TStringPackageInfo>
 
     protected override ValueTask OnStartedAsync()
     {
-        _logger.LogInformation("Socket 服务已启动");
         return base.OnStartedAsync();
     }
 
     protected override ValueTask OnStopAsync()
     {
-        _logger.LogInformation("Socket 服务已停止");
-        _unauthenticatedSessions.Clear();
-        _authenticatedSessions.Clear();
         return base.OnStopAsync();
     }
 
-    public async Task RegisterAuthAsync(SocketSession session)
+    public async Task BroadcastAsync(string clientKey, byte[] buffer, int offset, int size)
     {
-        await Task.Delay(0);
-        _unauthenticatedSessions.TryRemove(session.SessionID, out var _);
-        _authenticatedSessions.TryAdd(session.SessionID, session);
-        _logger.LogInformation(
-            "Session 已认证 [SessionID: {SessionID}, User: {User}]",
-            session.SessionID,
-            session.LoginInfo?.Name
-        );
+        var encoded = SocketHelper.StringPackInfoMessageEncoder(clientKey, buffer, offset, size);
+
+        // 打印字节数组的十六进制值
+        var hexString = string.Join(" ", encoded.Span.ToArray().Select(b => $"0x{b:X2}"));
+        Console.WriteLine($"[BroadcastAsync] 编码后的字节: {hexString}");
+
+        foreach (var session in _session)
+        {
+            try
+            {
+                await session.SendAsync(encoded);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[BroadcastAsync] 发送失败: {ex.Message}");
+            }
+        }
     }
 
-    public async Task UnregisterAuthAsync(SocketSession session)
+    public async Task BroadcastAsync(string message)
     {
-        await Task.Delay(0);
-        _authenticatedSessions.TryRemove(session.SessionID, out _);
-        _logger.LogInformation(
-            "Session 已取消认证 [SessionID: {SessionID}, User: {User}]",
-            session.SessionID,
-            session.LoginInfo?.Name
-        );
+        foreach (var session in _session)
+        {
+            try
+            {
+                await session.SendAsync("Test 1 Info\r\n"u8.ToArray());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[BroadcastAsync] 发送失败: {ex.Message}");
+            }
+        }
     }
-
-    // public static IServer BuildSuperSocket(
-    //     List<ListenOptions> listenOptionsList,
-    //     bool useUdp = false
-    // )
-    // {
-    //     var socketHostBuilder = SuperSocketHostBuilder
-    //         .Create<StringPackageInfo, CommandLinePipelineFilter>()
-    //         .UseHostedService<SocketService<StringPackageInfo>>()
-    //         .UseSession<SocketSession>()
-    //         .UseCommand(
-    //             (commandOptions) =>
-    //             {
-    //                 commandOptions.AddCommand<LoginCommand>();
-    //                 // commandOptions.AddGlobalCommandFilter<AuthAsyncCommandFilterAttribute>();
-    //             }
-    //         )
-    //         .UseInProcSessionContainer()
-    //         .ConfigureSuperSocket(options =>
-    //             listenOptionsList.ForEach(o => options.AddListener(o))
-    //         );
-    //
-    //     if (useUdp)
-    //     {
-    //         socketHostBuilder.UseUdp();
-    //     }
-    //
-    //     var hostBuilder = socketHostBuilder
-    //         .ConfigureServices(services =>
-    //         {
-    //             services.AddSingleton<CrossSetting>();
-    //             services.AddLogging(builder =>
-    //             {
-    //                 builder.SetMinimumLevel(LogLevel.Debug);
-    //             });
-    //         })
-    //         .ConfigureLogging(
-    //             (_, loggingBuilder) =>
-    //             {
-    //                 loggingBuilder.ClearProviders();
-    //                 loggingBuilder.AddSerilog(dispose: true);
-    //             }
-    //         );
-    //
-    //     return hostBuilder.BuildAsServer();
-    // }
 }

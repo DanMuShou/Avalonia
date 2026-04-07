@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using MiniToolBoxCross.Common.Global;
-using MiniToolBoxCross.Models.Repositories.Global;
-using MiniToolBoxCross.Models.Services.Global;
+using MiniToolBoxCross.Models.Repositories;
+using MiniToolBoxCross.Models.Services;
 using MiniToolBoxCross.ViewModels;
 using MiniToolBoxCross.ViewModels.Pages;
 using MiniToolBoxCross.ViewModels.UserControls;
@@ -14,6 +14,9 @@ public static class ServiceCollectionExtensions
     {
         // 注册通知服务
         services.AddSingleton<INotificationService, NotificationService>();
+        services.AddSingleton<IDialogService, DialogService>();
+        services.AddSingleton<IHostForwardService, HostForwardService>();
+        services.AddSingleton<IClientForwardService, ClientForwardService>();
 
         // 注册设置
         services.AddSingleton<CrossSetting>();

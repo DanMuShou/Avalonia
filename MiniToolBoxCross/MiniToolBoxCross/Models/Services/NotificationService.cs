@@ -2,9 +2,9 @@ using System;
 using Avalonia.Controls.Notifications;
 using Microsoft.Extensions.Logging;
 using MiniToolBoxCross.Common.Global;
-using MiniToolBoxCross.Models.Repositories.Global;
+using MiniToolBoxCross.Models.Repositories;
 
-namespace MiniToolBoxCross.Models.Services.Global;
+namespace MiniToolBoxCross.Models.Services;
 
 /// <summary>
 /// 弹窗通知服务实现

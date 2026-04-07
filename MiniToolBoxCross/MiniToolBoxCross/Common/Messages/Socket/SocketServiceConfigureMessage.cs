@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace MiniToolBoxCross.Common.Messages.SocketService;
+namespace MiniToolBoxCross.Common.Messages.Socket;
 
 public record SocketServiceConfigureMessage(
     string Name,

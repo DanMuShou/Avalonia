@@ -1,225 +1,169 @@
 ﻿using System;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
-using System.Text.Json;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using MiniToolBoxCross.Common.Enums;
 using MiniToolBoxCross.Common.Global;
 using MiniToolBoxCross.Common.Helper;
 using MiniToolBoxCross.Models.Entities;
-using MiniToolBoxCross.Models.Repositories.Global;
-using SuperSocket.Client;
-using SuperSocket.ProtoBase;
+using MiniToolBoxCross.Models.Repositories;
+using MiniToolBoxCross.ViewModels.Dialogs;
+using MiniToolBoxCross.Views.Dialogs;
 
 namespace MiniToolBoxCross.ViewModels.Pages;
 
 public partial class SocketClientViewModel : ViewModelBase
 {
     [ObservableProperty]
-    private string _ipAddress = string.Empty;
+    private string _serverIp = string.Empty;
 
     [ObservableProperty]
-    private int _port = 19285;
+    private int _serverPort;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ConnectCommand))]
-    [NotifyCanExecuteChangedFor(nameof(DisconnectCommand))]
+    private bool _isBusy;
+
+    [ObservableProperty]
     private bool _isConnected;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ConnectCommand))]
-    [NotifyCanExecuteChangedFor(nameof(DisconnectCommand))]
-    [NotifyCanExecuteChangedFor(nameof(PingCommand))]
-    private bool _isBusy;
+    private ForwardModel? _selectedForward;
 
+    public ObservableCollection<ForwardModel> ForwardModels { get; }
     private readonly CrossSystemFunc _crossSystemFunc;
     private readonly INotificationService _notificationService;
-    private readonly IEasyClient<StringPackageInfo> _client;
+    private readonly IDialogService _dialogService;
+    private readonly IClientForwardService _clientForwardService;
 
     public SocketClientViewModel(
         CrossSystemFunc crossSystemFunc,
-        INotificationService notificationService
+        INotificationService notificationService,
+        IDialogService dialogService,
+        IClientForwardService clientForwardService
     )
     {
         _crossSystemFunc = crossSystemFunc;
         _notificationService = notificationService;
+        _dialogService = dialogService;
+        _clientForwardService = clientForwardService;
 
-        _client = new EasyClient<StringPackageInfo>(new CommandLinePipelineFilter());
-        _client.PackageHandler += ClientOnPackageHandler;
-        _client.Closed += ClientOnClosed;
+        ForwardModels = [];
+        ServerPort = 10295;
     }
 
-    private bool CanConnect() => !IsConnected && !IsBusy;
-
-    [RelayCommand(CanExecute = nameof(CanConnect))]
+    [RelayCommand]
     private async Task Connect()
     {
         if (IsConnected || IsBusy)
             return;
 
-        if (!IPAddress.TryParse(IpAddress, out var ipAddress))
+        if (!IPAddress.TryParse(ServerIp, out var ip))
         {
-            _notificationService.ShowWarning("验证失败", "请输入有效的 IP 地址");
+            _notificationService.ShowError("连接失败", "服务器地址格式错误");
             return;
         }
-        if (Port is <= 0 or > 65535)
-        {
-            _notificationService.ShowWarning("验证失败", "请输入有效的端口号（1-65535）");
-            return;
-        }
-
-        var endPoint = new IPEndPoint(ipAddress, Port);
 
         IsBusy = true;
-        try
+        if (!_clientForwardService.IsConfigured)
+            await _clientForwardService.ConfigAsync(new IPEndPoint(ip, ServerPort));
+        var result = await _clientForwardService.ConnectAsync();
+        if (result)
         {
-            var result = await _client.ConnectAsync(endPoint);
-            IsConnected = result;
-
-            if (result)
-                _notificationService.ShowSuccess("连接成功", $"已成功连接到 {endPoint}");
-            else
-                _notificationService.ShowWarning(
-                    "连接失败",
-                    $"无法连接到 {endPoint}，请检查网络或服务器状态"
-                );
-
-            if (result)
-            {
-                _client.StartReceive();
-
-                await Task.Delay(100);
-
-                var loginInfo = new LoginRequest
-                {
-                    Name = "test",
-                    Password = "test",
-                    InvitationCode = Guid.NewGuid(),
-                };
-
-                await _client.SendAsync(
-                    CommandLinePackageEncoder.Encode(
-                        nameof(SocketCommandType.Login),
-                        JsonSerializer.Serialize(loginInfo)
-                    )
-                );
-
-                // 显示连接成功通知
-                _notificationService.ShowSuccess("连接成功", $"已成功连接到 {endPoint}");
-            }
-            else
-            {
-                // 显示连接失败通知
-                _notificationService.ShowError(
-                    "连接失败",
-                    $"无法连接到 {endPoint}，请检查网络或服务器状态"
-                );
-            }
+            IsConnected = true;
+            _notificationService.ShowSuccess("连接成功", "已成功连接到服务器");
         }
-        catch (Exception ex)
-        {
-            _notificationService.ShowError("连接异常", $"连接过程中发生错误：{ex.Message}");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private bool CanPing() => !IsBusy;
-
-    [RelayCommand(CanExecute = nameof(CanPing))]
-    private async Task Ping()
-    {
-        if (string.IsNullOrWhiteSpace(IpAddress))
-        {
-            _notificationService.ShowWarning("验证失败", "请输入有效的 IPv6 地址");
-            return;
-        }
-
-        try
-        {
-            using var ping = new Ping();
-            var pingOptions = new PingOptions { Ttl = 128, DontFragment = false };
-            var buffer = new byte[32];
-            const int timeout = 5000; // 5 秒超时
-
-            var reply = await ping.SendPingAsync(IpAddress, timeout, buffer, pingOptions);
-
-            if (reply.Status == IPStatus.Success)
-            {
-                _notificationService.ShowSuccess("Ping 成功", $"往返时间：{reply.RoundtripTime}ms");
-            }
-            else
-            {
-                _notificationService.ShowWarning("Ping 失败", $"目标主机不可达：{reply.Status}");
-            }
-        }
-        catch (PingException ex)
-        {
-            _notificationService.ShowError("网络错误", $"Ping 过程中发生网络错误：{ex.Message}");
-        }
-        catch (ArgumentException ex)
-        {
-            _notificationService.ShowError("参数错误", $"IP 地址格式不正确：{ex.Message}");
-        }
-        catch (Exception ex)
-        {
-            _notificationService.ShowError("操作失败", $"Ping 过程中发生未知错误：{ex.Message}");
-        }
+        else
+            _notificationService.ShowError("连接失败", "无法连接到服务器");
+        IsBusy = false;
     }
 
     [RelayCommand]
-    private async Task PasteIp()
-    {
-        var text = await _crossSystemFunc.GetClipboardText();
-        if (IPEndPoint.TryParse(text, out var ipEndPoint))
-        {
-            IpAddress = ipEndPoint.Address.ToString();
-            Port = ipEndPoint.Port;
-        }
-    }
-
-    private bool CanDisconnect() => IsConnected && !IsBusy;
-
-    [RelayCommand(CanExecute = nameof(CanDisconnect))]
     private async Task Disconnect()
     {
         if (!IsConnected || IsBusy)
             return;
+
         IsBusy = true;
-
-        try
+        var result = await _clientForwardService.DisconnectAsync();
+        if (result)
         {
-            await _client.CloseAsync();
             IsConnected = false;
-            // 弹窗会自动记录日志
-            _notificationService.ShowInformation("断开连接", "已成功断开与服务器的连接");
+            _notificationService.ShowSuccess("停止成功", "已成功断开与服务器的连接");
         }
-        catch (Exception ex)
+        else
+            _notificationService.ShowError("停止失败", "无法断开与服务器的连接");
+
+        IsBusy = false;
+    }
+
+    [RelayCommand]
+    private async Task Reconnect()
+    {
+        if (!IsConnected || IsBusy)
+            return;
+
+        IsBusy = true;
+        var result = await _clientForwardService.ReconnectAsync();
+        if (result)
         {
-            // 弹窗会自动记录日志
-            _notificationService.ShowError("断开失败", $"断开连接时发生错误：{ex.Message}");
+            IsConnected = true;
+            _notificationService.ShowSuccess("重新连接成功", "已成功重新连接到服务器");
         }
-        finally
+        else
         {
-            IsBusy = false;
+            IsConnected = false;
+            _notificationService.ShowError("重新连接失败", "无法重新连接到服务器");
+        }
+        IsBusy = false;
+    }
+
+    [RelayCommand]
+    private void Ping()
+    {
+        _notificationService.ShowSuccess("Ping", "Pong");
+    }
+
+    [RelayCommand]
+    private async Task RemoveSelectedForwardModel()
+    {
+        if (SelectedForward is not null && ForwardModels.Contains(SelectedForward))
+        {
+            var result = await _clientForwardService.RemoveForwardServerAsync(SelectedForward.Id);
+            if (result)
+                ForwardModels.Remove(SelectedForward);
         }
     }
 
-    private async ValueTask ClientOnPackageHandler(
-        EasyClient<StringPackageInfo> sender,
-        StringPackageInfo package
-    )
+    [RelayCommand]
+    private async Task OpenForwardConfigureDialog()
     {
-        await Task.Delay(0);
+        var model = await _dialogService.ShowCustomModalAsync<
+            ForwardConfigureDialog,
+            ForwardConfigureDialogViewModel,
+            ForwardModel
+        >(new ForwardConfigureDialogViewModel());
+        if (model is not null)
+        {
+            var result = await _clientForwardService.AddForwardServerAsync(
+                model.IpEndPoint,
+                model.ForwardTargetType
+            );
+            if (result is not null)
+            {
+                model.Id = result.Id;
+                model.IpEndPoint = new IPEndPoint(IPAddress.Parse(result.Address), result.Port);
+                ForwardModels.Add(model);
+            }
+        }
     }
 
-    private void ClientOnClosed(object? sender, EventArgs e)
+    [RelayCommand]
+    private async Task Paste()
     {
-        IsConnected = false;
-        _notificationService.ShowInformation("连接断开", "与服务器的连接已断开");
+        var text = await _crossSystemFunc.GetClipboardTextAsync();
+        if (IPAddress.TryParse(text, out var ip))
+            ServerIp = ip.ToString();
     }
 }

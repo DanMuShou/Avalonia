@@ -1,6 +1,6 @@
 using Avalonia.Controls.Notifications;
 
-namespace MiniToolBoxCross.Models.Repositories.Global;
+namespace MiniToolBoxCross.Models.Repositories;
 
 /// <summary>
 /// 弹窗通知服务接口
