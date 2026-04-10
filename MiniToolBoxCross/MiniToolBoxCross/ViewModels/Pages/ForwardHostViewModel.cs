@@ -9,13 +9,12 @@ using MiniToolBoxCross.Common.Global;
 using MiniToolBoxCross.Common.Helper;
 using MiniToolBoxCross.Models.Entities;
 using MiniToolBoxCross.Models.Repositories;
-using MiniToolBoxCross.Services;
 using MiniToolBoxCross.ViewModels.Dialogs;
 using MiniToolBoxCross.Views.Dialogs;
 
 namespace MiniToolBoxCross.ViewModels.Pages;
 
-public partial class SocketServerViewModel : ViewModelBase
+public partial class ForwardHostViewModel : ViewModelBase
 {
     [ObservableProperty]
     private IPAddress _serverIp;
@@ -37,57 +36,68 @@ public partial class SocketServerViewModel : ViewModelBase
     private readonly CrossSystemFunc _crossSystemFunc;
     private readonly INotificationService _notificationService;
     private readonly IDialogService _dialogService;
-    private readonly IHostForwardService _hostForwardService;
 
-    public SocketServerViewModel(
+    private readonly IForwardHostService _forwardHostService;
+
+    public ForwardHostViewModel(
         CrossSystemFunc crossSystemFunc,
         INotificationService notificationService,
         IDialogService dialogService,
-        IHostForwardService hostForwardService
+        IForwardHostService forwardHostService
     )
     {
         _crossSystemFunc = crossSystemFunc;
         _notificationService = notificationService;
         _dialogService = dialogService;
-        _hostForwardService = hostForwardService;
+        _forwardHostService = forwardHostService;
         IpAddressList = new ObservableCollection<IPAddress>(SocketHelper.GetIpAddressList());
         ForwardModels = [];
-
         ServerIp =
             SocketHelper.GetIpAddressList(AddressFamily.InterNetworkV6).FirstOrDefault()
             ?? IPAddress.None;
         ServerPort = 10295;
+
+        forwardHostService.OnErrorOccurred = () =>
+        {
+            IsRunning = false;
+            IsBusy = false;
+            _notificationService.ShowError("主机异常", "主机异常");
+        };
     }
 
     [RelayCommand]
-    private async Task Start()
+    private Task Start()
     {
         if (IsRunning || IsBusy)
-            return;
+            return Task.CompletedTask;
 
         IsBusy = true;
-        if (!_hostForwardService.IsConfigured)
-            await _hostForwardService.ConfigAsync(new IPEndPoint(ServerIp, ServerPort));
-        var result = await _hostForwardService.StartAsync();
-        if (result)
+
+        if (!_forwardHostService.IsConfigured)
+            _forwardHostService.Config(new IPEndPoint(ServerIp, ServerPort));
+
+        var isStarted = _forwardHostService.Start();
+        if (isStarted)
         {
             IsRunning = true;
             _notificationService.ShowSuccess("启动成功", "服务器已启动");
         }
         else
             _notificationService.ShowError("启动失败", "服务器启动失败");
+
         IsBusy = false;
+        return Task.CompletedTask;
     }
 
     [RelayCommand]
-    private async Task Stop()
+    private Task Stop()
     {
         if (!IsRunning || IsBusy)
-            return;
+            return Task.CompletedTask;
 
         IsBusy = true;
-        var result = await _hostForwardService.StopAsync();
-        IsRunning = result;
+
+        var result = _forwardHostService.Stop();
         if (result)
         {
             IsRunning = false;
@@ -95,17 +105,19 @@ public partial class SocketServerViewModel : ViewModelBase
         }
         else
             _notificationService.ShowError("停止失败", "服务器停止失败");
+
         IsBusy = false;
+        return Task.CompletedTask;
     }
 
     [RelayCommand]
-    private async Task Restart()
+    private Task Restart()
     {
         if (!IsRunning || IsBusy)
-            return;
+            return Task.CompletedTask;
 
         IsBusy = true;
-        var result = await _hostForwardService.RestartAsync();
+        var result = _forwardHostService.Restart();
         if (result)
         {
             IsRunning = true;
@@ -117,16 +129,7 @@ public partial class SocketServerViewModel : ViewModelBase
             _notificationService.ShowError("重启失败", "服务器重启失败");
         }
         IsBusy = false;
-    }
-
-    [RelayCommand]
-    private void RemoveSelectedForwardModel()
-    {
-        if (SelectedForward is null || !ForwardModels.Contains(SelectedForward))
-            return;
-        var result = _hostForwardService.RemoveForwardClientAsync(SelectedForward.Id);
-        if (result)
-            ForwardModels.Remove(SelectedForward);
+        return Task.CompletedTask;
     }
 
     [RelayCommand]
@@ -139,15 +142,33 @@ public partial class SocketServerViewModel : ViewModelBase
         >(new ForwardConfigureDialogViewModel());
         if (model is null)
             return;
-        var result = _hostForwardService.AddForwardClientAsync(
-            model.IpEndPoint,
+        var client = _forwardHostService.AddForwardClient(
+            model.IPEndPoint,
             model.ForwardTargetType
         );
-        if (result == null)
+        if (client is not null)
+        {
+            model.Id = client.Id;
+            ForwardModels.Add(model);
+            _notificationService.ShowSuccess("添加成功", "已成功添加转发客户端");
+        }
+        else
+            _notificationService.ShowError("添加失败", "无法添加转发客户端");
+    }
+
+    [RelayCommand]
+    private void RemoveSelectedForwardModel()
+    {
+        if (SelectedForward is null || !ForwardModels.Contains(SelectedForward))
             return;
-        model.Id = result.Id;
-        model.IpEndPoint = new IPEndPoint(IPAddress.Parse(result.Address), result.Port);
-        ForwardModels.Add(model);
+        var result = _forwardHostService.RemoveForwardClient(SelectedForward.Id);
+        if (result)
+        {
+            ForwardModels.Remove(SelectedForward);
+            _notificationService.ShowSuccess("删除成功", "已成功删除转发客户端");
+        }
+        else
+            _notificationService.ShowError("删除失败", "无法删除转发客户端");
     }
 
     [RelayCommand]

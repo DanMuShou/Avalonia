@@ -50,9 +50,11 @@
                 Grid.Row="1"
                 Label="转发端口"
                 Margin="16,8,0,0">
-                <NumericUpDown
+                <u:NumericUIntUpDown
+                    EmptyInputValue="1024"
                     Maximum="65535"
                     Minimum="1024"
+                    Step="1"
                     Value="{Binding ForwardPort}" />
             </u:FormItem>
 

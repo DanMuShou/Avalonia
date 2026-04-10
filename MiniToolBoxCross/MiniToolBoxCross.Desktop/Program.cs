@@ -16,7 +16,6 @@ sealed class Program
         try
         {
             Console.OutputEncoding = Encoding.UTF8;
-
             Log.Information("Starting MiniToolBoxCross Desktop application");
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }

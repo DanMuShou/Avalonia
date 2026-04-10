@@ -101,17 +101,29 @@ public static class SocketHelper
         return [.. usedPorts];
     }
 
-    public static int? CheckClientPortValidation(int port) =>
-        port is >= MinPort and <= MaxPort ? port : null;
+    // public static int? CheckClientPortValidation(int port) =>
+    //     port is >= MinPort and <= MaxPort ? port : null;
 
-    public static int? CheckServerPortValidation(int port)
+    // public static int? CheckServerPortValidation(int port)
+    // {
+    //     var usedPorts = GetAllUsedTcpPorts();
+    //     usedPorts.AddRange(GetAllUsedUdpPorts());
+
+    //     if (port is < MinPort or > MaxPort)
+    //         return GetRandomAvailablePort();
+    //     return !usedPorts.Contains(port) ? port : GetRandomServerPort();
+    // }
+
+    public static bool IsClientPortAvailable(int port)
+    {
+        return port is >= MinPort and <= MaxPort;
+    }
+
+    public static bool IsServerPortAvailable(int port)
     {
         var usedPorts = GetAllUsedTcpPorts();
         usedPorts.AddRange(GetAllUsedUdpPorts());
-
-        if (port is < MinPort or > MaxPort)
-            return GetRandomAvailablePort();
-        return !usedPorts.Contains(port) ? port : GetRandomServerPort();
+        return port is >= MinPort and <= MaxPort && !usedPorts.Contains(port);
     }
 
     private static int? GetRandomServerPort()
@@ -167,53 +179,6 @@ public static class SocketHelper
     #endregion
 
     #region SUPERSOCKET
-
-    // public static ISocketService BuildSocketServer(
-    //     ListenOptions listenOptions,
-    //     IServiceProvider serviceProvider
-    // )
-    // {
-    //     var socketHostBuilder = SuperSocketHostBuilder
-    //         .Create<StringPackageInfo, CommandLinePipelineFilter>()
-    //         .UseHostedService<SocketService<StringPackageInfo>>()
-    //         .UseSession<SocketSession>()
-    //         .ConfigureSuperSocket(options => options.AddListener(listenOptions))
-    //         .UseCommand(commandOptions =>
-    //         {
-    //             commandOptions.AddCommand<GameCommand>();
-    //         })
-    //         .UseDefaultServiceProvider(
-    //             (hostContext, options) =>
-    //             {
-    //                 options.ValidateScopes = hostContext.HostingEnvironment.IsDevelopment();
-    //                 options.ValidateOnBuild = true;
-    //             }
-    //         )
-    //         .ConfigureServices(services =>
-    //         {
-    //             services.AddLogging(builder =>
-    //             {
-    //                 builder.SetMinimumLevel(LogLevel.Debug);
-    //             });
-
-    //             services.AddSingleton(_ =>
-    //                 serviceProvider.GetRequiredService<IForwardClientManager>()
-    //             );
-    //             services.AddSingleton(_ =>
-    //                 serviceProvider.GetRequiredService<INotificationService>()
-    //             );
-    //         })
-    //         .ConfigureLogging(
-    //             (_, loggingBuilder) =>
-    //             {
-    //                 loggingBuilder.ClearProviders();
-    //                 loggingBuilder.AddSerilog(dispose: true);
-    //             }
-    //         );
-
-    //     return socketHostBuilder.BuildAsServer() as ISocketService
-    //         ?? throw new InvalidOperationException("Server is not StringPackageInfo.");
-    // }
 
     public static ReadOnlyMemory<byte> StringPackInfoMessageEncoder(
         string key,

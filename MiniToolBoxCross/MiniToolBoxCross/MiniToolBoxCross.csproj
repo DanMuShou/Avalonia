@@ -19,15 +19,13 @@
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Irihi.Ursa.Themes.Semi" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Semi.Avalonia" />
     <PackageReference Include="Semi.Avalonia.DataGrid" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Extensions.Logging" />
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.Debug" />
-    <PackageReference Include="SuperSocket" />
-    <PackageReference Include="SuperSocket.Client" />
-    <PackageReference Include="SuperSocket.Udp" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\Styles\" />

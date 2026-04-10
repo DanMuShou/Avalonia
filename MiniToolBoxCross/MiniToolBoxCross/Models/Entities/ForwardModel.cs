@@ -18,13 +18,13 @@ public partial class ForwardModel : ModelBase
 
     public Guid Id { get; set; }
 
-    public IPEndPoint IpEndPoint
+    public IPEndPoint IPEndPoint
     {
         get;
         set
         {
             field = value;
-            ForwardNetInfo = IpEndPoint + " - " + ForwardTargetType;
+            ForwardNetInfo = IPEndPoint + " - " + ForwardTargetType;
         }
     }
 
@@ -36,6 +36,6 @@ public partial class ForwardModel : ModelBase
     {
         Name = name;
         ForwardTargetType = forwardTargetType;
-        IpEndPoint = forwardNetIpEndPoint;
+        IPEndPoint = forwardNetIpEndPoint;
     }
 }

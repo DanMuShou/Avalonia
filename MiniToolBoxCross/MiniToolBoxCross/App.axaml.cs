@@ -10,8 +10,6 @@ using MiniToolBoxCross.Common.Extensions;
 using MiniToolBoxCross.Common.Global;
 using MiniToolBoxCross.ViewModels;
 using MiniToolBoxCross.Views;
-using SuperSocket.ProtoBase;
-using SuperSocket.Server.Host;
 
 namespace MiniToolBoxCross;
 
@@ -24,13 +22,7 @@ public partial class App : Application
     {
         _host = Host.CreateDefaultBuilder()
             .UseOnlySerilog()
-            .ConfigureServices(
-                (_, services) =>
-                {
-                    services.AddServices();
-                }
-            )
-            .AsSuperSocketHostBuilder<StringPackageInfo>()
+            .ConfigureServices((_, services) => services.AddServices())
             .Build();
     }
 

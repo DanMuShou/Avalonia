@@ -15,8 +15,10 @@ public static class ServiceCollectionExtensions
         // 注册通知服务
         services.AddSingleton<INotificationService, NotificationService>();
         services.AddSingleton<IDialogService, DialogService>();
-        services.AddSingleton<IHostForwardService, HostForwardService>();
-        services.AddSingleton<IClientForwardService, ClientForwardService>();
+        services.AddSingleton<IForwardHostService, ForwardHostService>();
+        services.AddSingleton<IForwardClientService, ForwardClientService>();
+        // services.AddSingleton<IForwardHostService, ForwardHostService>();
+        // services.AddSingleton<IForwardClientService, ForwardClientService>();
 
         // 注册设置
         services.AddSingleton<CrossSetting>();
@@ -24,8 +26,8 @@ public static class ServiceCollectionExtensions
 
         // 注册视图模型
         services.AddTransient<MainViewModel>();
-        services.AddTransient<SocketServerViewModel>();
-        services.AddTransient<SocketClientViewModel>();
+        services.AddTransient<ForwardHostViewModel>();
+        services.AddTransient<ForwardClientViewModel>();
 
         // 注册用户控件
         services.AddTransient<LogBoxViewModel>();

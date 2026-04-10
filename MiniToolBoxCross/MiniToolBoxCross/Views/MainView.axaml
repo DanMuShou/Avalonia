@@ -1,6 +1,6 @@
 <UserControl
-    d:DesignHeight="450"
-    d:DesignWidth="800"
+    d:DesignHeight="350"
+    d:DesignWidth="450"
     mc:Ignorable="d"
     x:Class="MiniToolBoxCross.Views.MainView"
     x:DataType="vm:MainViewModel"
@@ -12,21 +12,15 @@
     xmlns:vm="using:MiniToolBoxCross.ViewModels"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid>
-        <ScrollViewer HorizontalAlignment="Stretch" Margin="16">
-            <Grid RowDefinitions="160, *">
-
-                <TabControl
-                    Grid.Row="1"
-                    HorizontalAlignment="Stretch"
-                    Margin="0,16,0,0">
-                    <TabItem Header="服务器">
-                        <pa:SocketServerView DataContext="{Binding SocketServerViewModel}" />
-                    </TabItem>
-                    <TabItem Header="客户端">
-                        <pa:SocketClientView DataContext="{Binding SocketClientViewModel}" />
-                    </TabItem>
-                </TabControl>
-            </Grid>
+        <ScrollViewer HorizontalAlignment="Stretch">
+            <TabControl HorizontalAlignment="Stretch">
+                <TabItem Header="主机">
+                    <pa:ForwardHostView DataContext="{Binding ForwardHostViewModel}" />
+                </TabItem>
+                <TabItem Header="客机">
+                    <pa:ForwardClientView DataContext="{Binding ForwardClientViewModel}" />
+                </TabItem>
+            </TabControl>
         </ScrollViewer>
         <u:OverlayDialogHost HorizontalAlignment="Stretch" />
     </Grid>

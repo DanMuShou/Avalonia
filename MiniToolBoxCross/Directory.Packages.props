@@ -19,15 +19,13 @@
       Include="Microsoft.Extensions.DependencyInjection"
       Version="11.0.0-preview.2.26159.112"
     />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.5" />
     <PackageVersion Include="Semi.Avalonia" Version="11.3.7.3" />
     <PackageVersion Include="Semi.Avalonia.DataGrid" Version="11.3.7.3" />
     <PackageVersion Include="Serilog" Version="4.3.1" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Sinks.Debug" Version="3.0.0" />
-    <PackageVersion Include="SuperSocket" Version="2.0.2" />
-    <PackageVersion Include="SuperSocket.Client" Version="2.0.2" />
-    <PackageVersion Include="SuperSocket.Udp" Version="2.0.2" />
     <PackageVersion Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.15" />
   </ItemGroup>
 </Project>

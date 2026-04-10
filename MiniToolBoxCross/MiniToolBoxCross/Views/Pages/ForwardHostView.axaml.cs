@@ -2,9 +2,9 @@
 
 namespace MiniToolBoxCross.Views.Pages;
 
-public partial class SocketClientView : UserControl
+public partial class ForwardHostView : UserControl
 {
-    public SocketClientView()
+    public ForwardHostView()
     {
         InitializeComponent();
     }

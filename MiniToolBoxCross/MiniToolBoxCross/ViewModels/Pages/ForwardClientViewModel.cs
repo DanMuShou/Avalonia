@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
+﻿using System.Collections.ObjectModel;
 using System.Net;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MiniToolBoxCross.Common.Global;
-using MiniToolBoxCross.Common.Helper;
 using MiniToolBoxCross.Models.Entities;
 using MiniToolBoxCross.Models.Repositories;
 using MiniToolBoxCross.ViewModels.Dialogs;
@@ -14,7 +11,7 @@ using MiniToolBoxCross.Views.Dialogs;
 
 namespace MiniToolBoxCross.ViewModels.Pages;
 
-public partial class SocketClientViewModel : ViewModelBase
+public partial class ForwardClientViewModel : ViewModelBase
 {
     [ObservableProperty]
     private string _serverIp = string.Empty;
@@ -35,58 +32,70 @@ public partial class SocketClientViewModel : ViewModelBase
     private readonly CrossSystemFunc _crossSystemFunc;
     private readonly INotificationService _notificationService;
     private readonly IDialogService _dialogService;
-    private readonly IClientForwardService _clientForwardService;
+    private readonly IForwardClientService _forwardClientService;
 
-    public SocketClientViewModel(
+    public ForwardClientViewModel(
         CrossSystemFunc crossSystemFunc,
         INotificationService notificationService,
         IDialogService dialogService,
-        IClientForwardService clientForwardService
+        IForwardClientService forwardClientService
     )
     {
         _crossSystemFunc = crossSystemFunc;
         _notificationService = notificationService;
         _dialogService = dialogService;
-        _clientForwardService = clientForwardService;
+        _forwardClientService = forwardClientService;
 
         ForwardModels = [];
         ServerPort = 10295;
+
+        _forwardClientService.OnErrorOccurred = () =>
+        {
+            IsBusy = false;
+            IsConnected = false;
+            _notificationService.ShowError("客机异常", "客机异常");
+        };
     }
 
     [RelayCommand]
-    private async Task Connect()
+    private Task Connect()
     {
         if (IsConnected || IsBusy)
-            return;
+            return Task.CompletedTask;
 
         if (!IPAddress.TryParse(ServerIp, out var ip))
         {
             _notificationService.ShowError("连接失败", "服务器地址格式错误");
-            return;
+            return Task.CompletedTask;
         }
 
         IsBusy = true;
-        if (!_clientForwardService.IsConfigured)
-            await _clientForwardService.ConfigAsync(new IPEndPoint(ip, ServerPort));
-        var result = await _clientForwardService.ConnectAsync();
-        if (result)
+
+        if (!_forwardClientService.IsConfigured)
+            _forwardClientService.Config(new IPEndPoint(ip, ServerPort));
+
+        var isConnected = _forwardClientService.Connect();
+        if (isConnected)
         {
             IsConnected = true;
             _notificationService.ShowSuccess("连接成功", "已成功连接到服务器");
         }
         else
             _notificationService.ShowError("连接失败", "无法连接到服务器");
+
         IsBusy = false;
+        return Task.CompletedTask;
     }
 
     [RelayCommand]
-    private async Task Disconnect()
+    private Task Disconnect()
     {
         if (!IsConnected || IsBusy)
-            return;
+            return Task.CompletedTask;
 
         IsBusy = true;
-        var result = await _clientForwardService.DisconnectAsync();
+
+        var result = _forwardClientService.Disconnect();
         if (result)
         {
             IsConnected = false;
@@ -94,18 +103,19 @@ public partial class SocketClientViewModel : ViewModelBase
         }
         else
             _notificationService.ShowError("停止失败", "无法断开与服务器的连接");
-
         IsBusy = false;
+        return Task.CompletedTask;
     }
 
     [RelayCommand]
-    private async Task Reconnect()
+    private Task Reconnect()
     {
         if (!IsConnected || IsBusy)
-            return;
+            return Task.CompletedTask;
 
         IsBusy = true;
-        var result = await _clientForwardService.ReconnectAsync();
+
+        var result = _forwardClientService.Reconnect();
         if (result)
         {
             IsConnected = true;
@@ -116,24 +126,15 @@ public partial class SocketClientViewModel : ViewModelBase
             IsConnected = false;
             _notificationService.ShowError("重新连接失败", "无法重新连接到服务器");
         }
+
         IsBusy = false;
+        return Task.CompletedTask;
     }
 
     [RelayCommand]
     private void Ping()
     {
         _notificationService.ShowSuccess("Ping", "Pong");
-    }
-
-    [RelayCommand]
-    private async Task RemoveSelectedForwardModel()
-    {
-        if (SelectedForward is not null && ForwardModels.Contains(SelectedForward))
-        {
-            var result = await _clientForwardService.RemoveForwardServerAsync(SelectedForward.Id);
-            if (result)
-                ForwardModels.Remove(SelectedForward);
-        }
     }
 
     [RelayCommand]
@@ -146,17 +147,34 @@ public partial class SocketClientViewModel : ViewModelBase
         >(new ForwardConfigureDialogViewModel());
         if (model is not null)
         {
-            var result = await _clientForwardService.AddForwardServerAsync(
-                model.IpEndPoint,
+            var server = _forwardClientService.AddForwardServer(
+                model.IPEndPoint,
                 model.ForwardTargetType
             );
-            if (result is not null)
+            if (server is not null)
             {
-                model.Id = result.Id;
-                model.IpEndPoint = new IPEndPoint(IPAddress.Parse(result.Address), result.Port);
+                model.Id = server.Id;
                 ForwardModels.Add(model);
+                _notificationService.ShowSuccess("添加成功", "已成功添加转发服务器");
             }
+            else
+                _notificationService.ShowError("添加失败", "无法添加转发服务器");
         }
+    }
+
+    [RelayCommand]
+    private void RemoveSelectedForwardModel()
+    {
+        if (SelectedForward is null || !ForwardModels.Contains(SelectedForward))
+            return;
+        var result = _forwardClientService.RemoveForwardServer(SelectedForward.Id);
+        if (result)
+        {
+            ForwardModels.Remove(SelectedForward);
+            _notificationService.ShowSuccess("删除成功", "已成功删除转发服务器");
+        }
+        else
+            _notificationService.ShowError("删除失败", "无法删除转发服务器");
     }
 
     [RelayCommand]

@@ -1,10 +1,9 @@
 ﻿<UserControl
     d:DesignHeight="450"
-    d:DesignWidth="400"
+    d:DesignWidth="800"
     mc:Ignorable="d"
-    x:Class="MiniToolBoxCross.Views.Pages.SocketServerView"
-    x:DataType="vm:SocketServerViewModel"
-    x:Name="Root"
+    x:Class="MiniToolBoxCross.Views.Pages.ForwardHostView"
+    x:DataType="vm:ForwardHostViewModel"
     xmlns="https://github.com/avaloniaui"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -38,9 +37,11 @@
                         Grid.Row="0"
                         Label="服务器端口"
                         Margin="8,8,0,0">
-                        <NumericUpDown
+                        <u:NumericUIntUpDown
+                            EmptyInputValue="1024"
                             Maximum="65535"
                             Minimum="0"
+                            Step="1"
                             Value="{Binding ServerPort}" />
                     </u:FormItem>
                 </u:Form>
@@ -56,15 +57,18 @@
                     <Button
                         Classes="Primary"
                         Command="{Binding StartCommand}"
-                        Content="启动" />
+                        Content="启动"
+                        IsEnabled="{Binding !IsRunning}" />
                     <Button
                         Classes="Danger"
                         Command="{Binding StopCommand}"
-                        Content="停止" />
+                        Content="停止"
+                        IsEnabled="{Binding IsRunning}" />
                     <Button
                         Classes="Warning"
                         Command="{Binding RestartCommand}"
-                        Content="重启" />
+                        Content="重启"
+                        IsEnabled="{Binding IsRunning}" />
                 </StackPanel>
 
                 <u:Form
@@ -96,12 +100,14 @@
                                 Classes="Primary"
                                 Command="{Binding OpenForwardConfigureDialogCommand}"
                                 Content="添加"
-                                HorizontalAlignment="Stretch" />
+                                HorizontalAlignment="Stretch"
+                                IsEnabled="{Binding !IsRunning}" />
                             <Button
                                 Classes="Danger"
                                 Command="{Binding RemoveSelectedForwardModelCommand}"
                                 Content="删除"
-                                HorizontalAlignment="Stretch" />
+                                HorizontalAlignment="Stretch"
+                                IsEnabled="{Binding !IsRunning}" />
                         </StackPanel>
                     </u:FormItem>
                 </u:Form>
